@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DiskAnalyzer.Core/DiskAnalyzer.Core.csproj" />
+    <Project Path="src/DiskAnalyzer.UI/DiskAnalyzer.UI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DiskAnalyzer.Tests/DiskAnalyzer.Tests.csproj" />
+  </Folder>
+</Solution>

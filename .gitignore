@@ -1,0 +1,27 @@
+## Build and Publish outputs
+[Bb]in/
+[Oo]bj/
+DiskAnalyzer_Portable_win-x64/
+SetupOutput/
+/DiskAnalyzer.exe
+/DiskAnalyzer.dll
+/DiskAnalyzer.pdb
+/DiskAnalyzer.deps.json
+/DiskAnalyzer.runtimeconfig.json
+
+## Visual Studio & IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.userprefs
+*.suo
+*.userosscache
+*.sln.docstates
+
+## OS Generated
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
