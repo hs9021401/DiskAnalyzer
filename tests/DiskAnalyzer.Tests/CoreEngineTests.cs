@@ -232,6 +232,34 @@ public class CoreEngineTests
     }
 
     [Fact]
+    public void FastDirectoryScanner_BrowseScanKeepsAbsoluteRootPath()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"DiskAnalyzerBrowsePathTest_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        string filePath = Path.Combine(tempDir, "properties-target.txt");
+        File.WriteAllText(filePath, "properties");
+
+        try
+        {
+            var scanner = new FastDirectoryScanner();
+            var result = scanner.Scan(tempDir, new ScanOptions { Path = tempDir });
+            var scannedFile = Assert.Single(DiskScanEngine.FlattenFiles(result));
+
+            Assert.True(Path.IsPathFullyQualified(result.GetFullPath()));
+            Assert.Equal(Path.GetFullPath(tempDir), result.GetFullPath());
+            Assert.Equal(filePath, scannedFile.GetFullPath());
+            Assert.True(File.Exists(scannedFile.GetFullPath()));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+    }
+
+    [Fact]
     public void Benchmark_ScanRealDirectory()
     {
         string scanDir = AppContext.BaseDirectory;
@@ -253,5 +281,4 @@ public class CoreEngineTests
         Assert.NotEmpty(extBreakdown);
     }
 }
-
 

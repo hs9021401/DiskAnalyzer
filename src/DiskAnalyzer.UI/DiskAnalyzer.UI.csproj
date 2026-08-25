@@ -13,6 +13,7 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
     <EnableDefaultPageItems>false</EnableDefaultPageItems>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
 
     <!-- Assembly & Executable Properties -->
     <Title>DiskAnalyzer</Title>
@@ -20,7 +21,7 @@
     <Description>Ultra-Fast NTFS Disk Space Visualizer and Analyzer</Description>
     <Company>Alex Lin</Company>
     <Authors>Alex Lin</Authors>
-    <Copyright>Copyright © 2026 Alex Lin. All rights reserved.</Copyright>
+    <Copyright>Copyright © 2026 Alex Lin</Copyright>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
     <Version>1.0.0</Version>
@@ -28,9 +29,12 @@
 
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)**\*.cs" Exclude="$(MSBuildThisFileDirectory)obj\**;$(MSBuildThisFileDirectory)bin\**" />
+    <EmbeddedResource Include="Resources\Strings*.resx" />
     <Page Include="MainWindow.xaml" />
     <Page Include="Themes\DarkTheme.xaml" />
     <Resource Include="app.ico" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
 </Project>

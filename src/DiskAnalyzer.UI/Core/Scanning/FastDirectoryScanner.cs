@@ -40,6 +40,7 @@ public class FastDirectoryScanner
         var rootItem = new FileSystemItem
         {
             Name = rootName,
+            RootPath = normalizedPath,
             IsDirectory = true,
             Attributes = FileAttributes.Directory
         };

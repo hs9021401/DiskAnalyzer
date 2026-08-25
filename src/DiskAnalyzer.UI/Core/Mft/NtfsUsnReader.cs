@@ -198,6 +198,8 @@ public class NtfsUsnReader
             rootItem.IsDirectory = true;
         }
 
+        rootItem.RootPath = driveLetter.EndsWith('\\') ? driveLetter : (driveLetter + "\\");
+
         foreach (var kvp in itemMap)
         {
             var item = kvp.Value;

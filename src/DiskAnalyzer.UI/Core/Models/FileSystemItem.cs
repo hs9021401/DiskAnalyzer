@@ -18,6 +18,8 @@ public class FileSystemItem : INotifyPropertyChanged
     private string? _cachedFullPath;
     private ObservableCollection<FileSystemItem>? _children;
     private string _name = string.Empty;
+    private string? _rootPath;
+    private FileSystemItem? _parent;
     private long _size;
     private long _allocatedSize;
     private long _fileCount;
@@ -31,7 +33,28 @@ public class FileSystemItem : INotifyPropertyChanged
     public string Name
     {
         get => _name;
-        set => SetField(ref _name, value);
+        set
+        {
+            if (SetField(ref _name, value))
+            {
+                InvalidateFullPathCache();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Absolute path represented by the root node. The display name remains in <see cref="Name"/>.
+    /// </summary>
+    public string? RootPath
+    {
+        get => _rootPath;
+        set
+        {
+            if (SetField(ref _rootPath, value))
+            {
+                InvalidateFullPathCache();
+            }
+        }
     }
 
     public long Size
@@ -111,7 +134,17 @@ public class FileSystemItem : INotifyPropertyChanged
     public FileAttributes Attributes { get; set; }
     public DateTime? LastModified { get; set; }
     public bool IsDirectory { get; set; }
-    public FileSystemItem? Parent { get; set; }
+    public FileSystemItem? Parent
+    {
+        get => _parent;
+        set
+        {
+            if (SetField(ref _parent, value))
+            {
+                InvalidateFullPathCache();
+            }
+        }
+    }
     public string Extension { get; set; } = string.Empty;
     public bool IsVirtual { get; set; }
 
@@ -162,20 +195,25 @@ public class FileSystemItem : INotifyPropertyChanged
 
         if (Parent == null)
         {
-            _cachedFullPath = Name;
+            _cachedFullPath = !string.IsNullOrWhiteSpace(RootPath) ? RootPath! : Name;
             return _cachedFullPath;
         }
 
         // Collect ancestors
         var stack = new Stack<string>();
         var current = this;
-        while (current != null)
+        while (current?.Parent != null)
         {
             if (!string.IsNullOrEmpty(current.Name))
             {
                 stack.Push(current.Name);
             }
             current = current.Parent;
+        }
+
+        if (current != null)
+        {
+            stack.Push(!string.IsNullOrWhiteSpace(current.RootPath) ? current.RootPath! : current.Name);
         }
 
         var sb = new StringBuilder(260);
@@ -208,6 +246,19 @@ public class FileSystemItem : INotifyPropertyChanged
 
         _cachedFullPath = sb.ToString();
         return _cachedFullPath;
+    }
+
+    private void InvalidateFullPathCache()
+    {
+        _cachedFullPath = null;
+
+        if (_children == null)
+            return;
+
+        foreach (var child in _children)
+        {
+            child.InvalidateFullPathCache();
+        }
     }
 
     /// <summary>

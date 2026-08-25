@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="WindowTitle" xml:space="preserve"><value>DiskAnalyzer - Visualizador de espacio de disco ultrarrápido</value></data>
+  <data name="MenuOpen" xml:space="preserve"><value>Abrir</value></data>
+  <data name="MenuRevealInExplorer" xml:space="preserve"><value>Mostrar en el Explorador de archivos</value></data>
+  <data name="MenuCopyFullPath" xml:space="preserve"><value>Copiar ruta completa</value></data>
+  <data name="MenuCopyAllDetails" xml:space="preserve"><value>Copiar todos los detalles</value></data>
+  <data name="MenuOpenCommandPromptHere" xml:space="preserve"><value>Abrir aquí el símbolo del sistema</value></data>
+  <data name="MenuOpenPowerShellHere" xml:space="preserve"><value>Abrir aquí PowerShell</value></data>
+  <data name="MenuZoomIntoFolder" xml:space="preserve"><value>Ampliar carpeta en el treemap</value></data>
+  <data name="MenuToggleHeatmap" xml:space="preserve"><value>Mostrar u ocultar mapa de calor</value></data>
+  <data name="MenuDeleteToRecycleBin" xml:space="preserve"><value>Eliminar a la papelera de reciclaje</value></data>
+  <data name="MenuPermanentlyDelete" xml:space="preserve"><value>Eliminar permanentemente...</value></data>
+  <data name="MenuProperties" xml:space="preserve"><value>Propiedades</value></data>
+  <data name="BrandSubtitle" xml:space="preserve"><value>Motor MFT NTFS ultrarrápido</value></data>
+  <data name="BrowseButton" xml:space="preserve"><value>📂 Examinar...</value></data>
+  <data name="BrowseTooltip" xml:space="preserve"><value>Seleccionar una carpeta personalizada para analizar</value></data>
+  <data name="ScanButton" xml:space="preserve"><value>▶ Escanear</value></data>
+  <data name="ScanTooltip" xml:space="preserve"><value>Iniciar un análisis rápido del disco</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>⏹ Cancelar</value></data>
+  <data name="CancelTooltip" xml:space="preserve"><value>Detener el análisis actual</value></data>
+  <data name="ClearSearchTooltip" xml:space="preserve"><value>Borrar filtro de búsqueda</value></data>
+  <data name="AdminBadge" xml:space="preserve"><value>Administrador (MFT directo)</value></data>
+  <data name="RestartAdminButton" xml:space="preserve"><value>⚡ Reiniciar como administrador</value></data>
+  <data name="RestartAdminTooltip" xml:space="preserve"><value>Reiniciar con privilegios de administrador para escanear MFT NTFS hasta 100 veces más rápido</value></data>
+  <data name="HeatmapHideButton" xml:space="preserve"><value>🗺️ Ocultar mapa de calor</value></data>
+  <data name="HeatmapShowButton" xml:space="preserve"><value>🗺️ Mostrar mapa de calor</value></data>
+  <data name="HeatmapTooltip" xml:space="preserve"><value>Mostrar u ocultar el panel del mapa de calor (ocultarlo reduce el uso de memoria y CPU)</value></data>
+  <data name="ExportCsvButton" xml:space="preserve"><value>📥 Exportar CSV</value></data>
+  <data name="ExportCsvTooltip" xml:space="preserve"><value>Exportar el árbol al formato CSV estándar</value></data>
+  <data name="CopyInfoButton" xml:space="preserve"><value>📋 Copiar información</value></data>
+  <data name="CopyInfoTooltip" xml:space="preserve"><value>Copiar la información del elemento seleccionado al portapapeles</value></data>
+  <data name="LanguageMenu" xml:space="preserve"><value>Idioma</value></data>
+  <data name="LanguageSystemDefault" xml:space="preserve"><value>Predeterminado del sistema</value></data>
+  <data name="TreeViewTab" xml:space="preserve"><value>🌲 Vista de árbol</value></data>
+  <data name="TreeNameHeader" xml:space="preserve"><value>Nombre</value></data>
+  <data name="TreeParentPercentHeader" xml:space="preserve"><value>% del padre</value></data>
+  <data name="SizeHeader" xml:space="preserve"><value>Tamaño</value></data>
+  <data name="AllocatedHeader" xml:space="preserve"><value>Asignado</value></data>
+  <data name="FilesHeader" xml:space="preserve"><value>Archivos</value></data>
+  <data name="FoldersHeader" xml:space="preserve"><value>Carpetas</value></data>
+  <data name="TotalPercentHeader" xml:space="preserve"><value>% total</value></data>
+  <data name="LastModifiedHeader" xml:space="preserve"><value>Última modificación</value></data>
+  <data name="AttributesHeader" xml:space="preserve"><value>Atributos</value></data>
+  <data name="FileViewTab" xml:space="preserve"><value>📄 Vista de archivos (archivos más grandes)</value></data>
+  <data name="FileNameHeader" xml:space="preserve"><value>Nombre de archivo</value></data>
+  <data name="FolderHeader" xml:space="preserve"><value>Carpeta</value></data>
+  <data name="ExtensionShortHeader" xml:space="preserve"><value>Ext.</value></data>
+  <data name="DateModifiedHeader" xml:space="preserve"><value>Fecha de modificación</value></data>
+  <data name="FileTypesTab" xml:space="preserve"><value>📊 Tipos de archivo (desglose)</value></data>
+  <data name="TotalSizeHeader" xml:space="preserve"><value>Tamaño total</value></data>
+  <data name="PercentOfTotalHeader" xml:space="preserve"><value>% del total</value></data>
+  <data name="FileCountHeader" xml:space="preserve"><value>Número de archivos</value></data>
+  <data name="AllocatedSizeHeader" xml:space="preserve"><value>Tamaño asignado</value></data>
+  <data name="RootButton" xml:space="preserve"><value>🏠 Raíz</value></data>
+  <data name="RootTooltip" xml:space="preserve"><value>Restablecer el zoom del treemap a la raíz</value></data>
+  <data name="UpButton" xml:space="preserve"><value>⬆ Arriba</value></data>
+  <data name="UpTooltip" xml:space="preserve"><value>Alejar al directorio principal</value></data>
+  <data name="ActiveFormat" xml:space="preserve"><value>Activo: {0}</value></data>
+  <data name="SelectedFormat" xml:space="preserve"><value>Seleccionado: {0}</value></data>
+  <data name="SelectedSizeFormat" xml:space="preserve"><value> ({0})</value></data>
+  <data name="StatusReady" xml:space="preserve"><value>Listo para escanear. Seleccione una unidad o examine una carpeta.</value></data>
+  <data name="InvalidPathTitle" xml:space="preserve"><value>Ruta no válida</value></data>
+  <data name="InvalidPathMessage" xml:space="preserve"><value>No se puede acceder a la ruta «{0}» o no existe.</value></data>
+  <data name="ScanningPathStatus" xml:space="preserve"><value>Escaneando «{0}»...</value></data>
+  <data name="InitializingStatus" xml:space="preserve"><value>Inicializando...</value></data>
+  <data name="ScanningFolderStatus" xml:space="preserve"><value>Escaneando: {0}</value></data>
+  <data name="ScanMetricsFormat" xml:space="preserve"><value>{0} archivos, {1} carpetas ({2}) - {3}</value></data>
+  <data name="ScanCompletedStatus" xml:space="preserve"><value>Análisis completado en {0} s ({1} archivos, {2} carpetas, {3})</value></data>
+  <data name="ScanCompletedMetrics" xml:space="preserve"><value>{0} archivos/s - {1} en total</value></data>
+  <data name="ScanCanceledStatus" xml:space="preserve"><value>Análisis cancelado después de {0} s.</value></data>
+  <data name="CanceledMetrics" xml:space="preserve"><value>Cancelado</value></data>
+  <data name="ScanErrorStatus" xml:space="preserve"><value>Error de análisis: {0}</value></data>
+  <data name="ErrorMetrics" xml:space="preserve"><value>Error</value></data>
+  <data name="ScanErrorTitle" xml:space="preserve"><value>Error de análisis</value></data>
+  <data name="ScanErrorMessage" xml:space="preserve"><value>No se pudo analizar «{0}»:&#xA;&#xA;{1}</value></data>
+  <data name="CancelingStatus" xml:space="preserve"><value>Cancelando el análisis...</value></data>
+  <data name="SelectFolderDialogTitle" xml:space="preserve"><value>Seleccionar carpeta para analizar</value></data>
+  <data name="ElevationTitle" xml:space="preserve"><value>Se requieren privilegios elevados</value></data>
+  <data name="ElevationMessage" xml:space="preserve"><value>No se pudieron elevar los privilegios de la aplicación:&#xA;{0}</value></data>
+  <data name="ExportCsvFilter" xml:space="preserve"><value>Archivos CSV (*.csv)|*.csv|Todos los archivos (*.*)|*.*</value></data>
+  <data name="ExportDialogTitle" xml:space="preserve"><value>Exportar análisis del disco a CSV</value></data>
+  <data name="ExportingStatus" xml:space="preserve"><value>Exportando a CSV...</value></data>
+  <data name="ExportedStatus" xml:space="preserve"><value>Exportado correctamente a {0}</value></data>
+  <data name="ExportCompleteTitle" xml:space="preserve"><value>Exportación completada</value></data>
+  <data name="ExportCompleteMessage" xml:space="preserve"><value>La exportación se guardó correctamente en:&#xA;{0}</value></data>
+  <data name="ExportErrorStatus" xml:space="preserve"><value>Error de exportación: {0}</value></data>
+  <data name="ExportFailedTitle" xml:space="preserve"><value>Exportación fallida</value></data>
+  <data name="ExportFailedMessage" xml:space="preserve"><value>No se pudo exportar el CSV:&#xA;{0}</value></data>
+  <data name="CopiedPathStatus" xml:space="preserve"><value>Ruta copiada al portapapeles: {0}</value></data>
+  <data name="CopiedPathsStatus" xml:space="preserve"><value>{0} rutas copiadas al portapapeles.</value></data>
+  <data name="CopiedDetailsStatus" xml:space="preserve"><value>Detalles de {0} copiados al portapapeles.</value></data>
+  <data name="CopiedDetailsManyStatus" xml:space="preserve"><value>Detalles de {0} elementos copiados al portapapeles.</value></data>
+  <data name="CopyFailedStatus" xml:space="preserve"><value>Error al copiar: {0}</value></data>
+  <data name="OpenFailedTitle" xml:space="preserve"><value>Error al abrir</value></data>
+  <data name="OpenFileFailedMessage" xml:space="preserve"><value>No se pudo abrir «{0}».</value></data>
+  <data name="OpenFolderFailedMessage" xml:space="preserve"><value>No se pudo abrir «{0}» en el Explorador de archivos.</value></data>
+  <data name="ConfirmDeleteTitle" xml:space="preserve"><value>Confirmar eliminación</value></data>
+  <data name="ConfirmDeleteSingle" xml:space="preserve"><value>¿Está seguro de que desea enviar «{0}» a la papelera de reciclaje?</value></data>
+  <data name="ConfirmDeleteMany" xml:space="preserve"><value>¿Está seguro de que desea enviar los {0} elementos seleccionados a la papelera?</value></data>
+  <data name="MovedToRecycleBinStatus" xml:space="preserve"><value>«{0}» se movió a la papelera de reciclaje.</value></data>
+  <data name="MovedItemsToRecycleBinStatus" xml:space="preserve"><value>{0} elementos movidos a la papelera de reciclaje.</value></data>
+  <data name="DeleteFailedTitle" xml:space="preserve"><value>Error al eliminar</value></data>
+  <data name="DeleteFailedMessage" xml:space="preserve"><value>No se pudieron enviar los elementos a la papelera.</value></data>
+  <data name="ConfirmPermanentDeleteTitle" xml:space="preserve"><value>Confirmar eliminación permanente</value></data>
+  <data name="ConfirmPermanentDeleteSingle" xml:space="preserve"><value>ADVERTENCIA: ¿Está seguro de que desea eliminar PERMANENTEMENTE:&#xA;«{0}»?&#xA;&#xA;¡Esta acción no se puede deshacer!</value></data>
+  <data name="ConfirmPermanentDeleteMany" xml:space="preserve"><value>ADVERTENCIA: ¿Está seguro de que desea eliminar PERMANENTEMENTE los {0} elementos seleccionados?&#xA;&#xA;¡Esta acción no se puede deshacer!</value></data>
+  <data name="PermanentlyDeletedStatus" xml:space="preserve"><value>«{0}» se eliminó permanentemente.</value></data>
+  <data name="PermanentlyDeletedItemsStatus" xml:space="preserve"><value>{0} elementos eliminados permanentemente.</value></data>
+  <data name="PermanentDeleteFailedTitle" xml:space="preserve"><value>Error al eliminar</value></data>
+  <data name="PermanentDeleteFailedMessage" xml:space="preserve"><value>No se pudieron eliminar permanentemente los elementos.</value></data>
+  <data name="ProgressInitializing" xml:space="preserve"><value>Inicializando el análisis...</value></data>
+  <data name="ProgressReadingMft" xml:space="preserve"><value>Leyendo registros MFT de NTFS ({0} archivos, {1} carpetas)...</value></data>
+  <data name="ProgressReadingUsn" xml:space="preserve"><value>Leyendo el diario de cambios USN ({0} elementos)...</value></data>
+  <data name="ProgressScanningFolder" xml:space="preserve"><value>Escaneando: {0}</value></data>
+  <data name="ProgressBuildingTree" xml:space="preserve"><value>Creando la jerarquía de directorios...</value></data>
+  <data name="ProgressCalculatingSizes" xml:space="preserve"><value>Agregando tamaños de carpetas y recuentos de archivos...</value></data>
+  <data name="ProgressSorting" xml:space="preserve"><value>Ordenando elementos del árbol...</value></data>
+  <data name="ProgressComplete" xml:space="preserve"><value>Análisis completado en {0} s ({1} archivos, {2} carpetas)</value></data>
+  <data name="ProgressCancelled" xml:space="preserve"><value>Análisis cancelado.</value></data>
+  <data name="ProgressError" xml:space="preserve"><value>Se produjo un error durante el análisis.</value></data>
+  <data name="ProgressScanning" xml:space="preserve"><value>Escaneando...</value></data>
+  <data name="NoExtensionLabel" xml:space="preserve"><value>[Sin extensión]</value></data>
+  <data name="FolderAnalysisTitle" xml:space="preserve"><value>Análisis de carpeta: {0}</value></data>
+  <data name="CustomFolderLabel" xml:space="preserve"><value>Carpeta personalizada</value></data>
+  <data name="ScanningActiveTarget" xml:space="preserve"><value>Analizando el destino actual</value></data>
+  <data name="NoDriveSelected" xml:space="preserve"><value>No hay unidad seleccionada</value></data>
+  <data name="TotalFormat" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="UsedFormat" xml:space="preserve"><value>Usado: {0} ({1}%)</value></data>
+  <data name="FreeFormat" xml:space="preserve"><value>Libre: {0} ({1}%)</value></data>
+  <data name="LocalDiskLabel" xml:space="preserve"><value>Disco local</value></data>
+  <data name="TreemapSizeFormat" xml:space="preserve"><value>Tamaño: {0} ({1} bytes)</value></data>
+  <data name="TreemapAllocatedFormat" xml:space="preserve"><value>Asignado: {0} ({1} bytes)</value></data>
+  <data name="TreemapParentPercentFormat" xml:space="preserve"><value>% del padre: {0}%</value></data>
+  <data name="TreemapFilesFoldersFormat" xml:space="preserve"><value>Archivos / carpetas: {0} archivos, {1} carpetas</value></data>
+  <data name="TreemapFilesFoldersValueFormat" xml:space="preserve"><value>{0} archivos, {1} carpetas</value></data>
+  <data name="TreemapModifiedFormat" xml:space="preserve"><value>Modificado: {0}</value></data>
+  <data name="TreemapTypeFormat" xml:space="preserve"><value>Tipo: {0}</value></data>
+  <data name="FullPathLabel" xml:space="preserve"><value>Ruta completa</value></data>
+  <data name="BytesLabel" xml:space="preserve"><value>bytes</value></data>
+  <data name="UnexpectedErrorTitle" xml:space="preserve"><value>Error de DiskAnalyzer</value></data>
+  <data name="UnexpectedErrorMessage" xml:space="preserve"><value>Se produjo un error inesperado:&#xA;&#xA;{0}&#xA;&#xA;Los detalles se registraron en:&#xA;{1}</value></data>
+  <data name="NoTreemapDataMessage" xml:space="preserve"><value>No hay datos del treemap. Seleccione una unidad y haga clic en Escanear.</value></data>
+</root>

@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using DiskAnalyzer.Core.Models;
 using DiskAnalyzer.UI.Helpers;
+using DiskAnalyzer.UI.Localization;
 
 namespace DiskAnalyzer.UI;
 
@@ -19,6 +20,21 @@ public class DriveUsageGauge : Control
     static DriveUsageGauge()
     {
         DefaultStyleKeyProperty.OverrideMetadata(typeof(DriveUsageGauge), new FrameworkPropertyMetadata(typeof(DriveUsageGauge)));
+    }
+
+    public DriveUsageGauge()
+    {
+        LocalizationService.Instance.LanguageChanged += (_, _) =>
+        {
+            if (Dispatcher.CheckAccess())
+            {
+                UpdateDisplay();
+            }
+            else
+            {
+                _ = Dispatcher.InvokeAsync(UpdateDisplay);
+            }
+        };
     }
 
     #region Dependency Properties
@@ -74,11 +90,13 @@ public class DriveUsageGauge : Control
         if (_progressBar == null || _titleText == null || _totalText == null || _usedText == null || _freeText == null)
             return;
 
+        LocalizationService localization = LocalizationService.Instance;
+
         if (!string.IsNullOrWhiteSpace(CustomPath))
         {
-            _titleText.Text = $"Folder Analysis: {CustomPath}";
-            _totalText.Text = "Custom Folder";
-            _usedText.Text = "Scanning active target";
+            _titleText.Text = localization.Format("FolderAnalysisTitle", CustomPath);
+            _totalText.Text = localization.Get("CustomFolderLabel");
+            _usedText.Text = localization.Get("ScanningActiveTarget");
             _freeText.Text = string.Empty;
             _progressBar.IsIndeterminate = false;
             _progressBar.Value = 100;
@@ -87,21 +105,25 @@ public class DriveUsageGauge : Control
 
         if (Drive == null)
         {
-            _titleText.Text = "No Drive Selected";
+            _titleText.Text = localization.Get("NoDriveSelected");
             _totalText.Text = "-";
-            _usedText.Text = "Used: -";
-            _freeText.Text = "Free: -";
+            _usedText.Text = localization.Format("UsedFormat", "-", "-");
+            _freeText.Text = localization.Format("FreeFormat", "-", "-");
             _progressBar.Value = 0;
             return;
         }
 
-        string driveName = string.IsNullOrWhiteSpace(Drive.Label) ? "Local Disk" : Drive.Label;
+        string driveName = string.IsNullOrWhiteSpace(Drive.Label)
+            ? localization.Get("LocalDiskLabel")
+            : Drive.Label;
         _titleText.Text = $"{driveName} ({Drive.DriveLetter}) - {Drive.FileSystemName}";
-        _totalText.Text = $"Total: {Drive.TotalBytesFormatted}";
+        _totalText.Text = localization.Format("TotalFormat", Drive.TotalBytesFormatted);
 
         double pct = Drive.UsagePercentage;
-        _usedText.Text = $"Used: {Drive.UsedBytesFormatted} ({pct:F1}%)";
-        _freeText.Text = $"Free: {Drive.FreeBytesFormatted} ({(100.0 - pct):F1}%)";
+        string usedPercent = pct.ToString("F1", localization.CurrentCulture);
+        string freePercent = (100.0 - pct).ToString("F1", localization.CurrentCulture);
+        _usedText.Text = localization.Format("UsedFormat", Drive.UsedBytesFormatted, usedPercent);
+        _freeText.Text = localization.Format("FreeFormat", Drive.FreeBytesFormatted, freePercent);
 
         _progressBar.Value = Math.Clamp(pct, 0, 100);
 

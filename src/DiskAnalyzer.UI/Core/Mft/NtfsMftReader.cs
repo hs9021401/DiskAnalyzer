@@ -245,6 +245,8 @@ public class NtfsMftReader
             rootItem.IsDirectory = true;
         }
 
+        rootItem.RootPath = driveLetter.EndsWith('\\') ? driveLetter : (driveLetter + "\\");
+
         // Link child items to parents
         foreach (var kvp in itemMap)
         {
@@ -273,6 +275,12 @@ public class NtfsMftReader
             if (found != null)
             {
                 found.Parent = null; // Detach as root
+                string normalizedTargetPath = Path.GetFullPath(drivePath).TrimEnd('\\');
+                if (normalizedTargetPath.EndsWith(':'))
+                {
+                    normalizedTargetPath += "\\";
+                }
+                found.RootPath = normalizedTargetPath;
                 effectiveRoot = found;
             }
         }

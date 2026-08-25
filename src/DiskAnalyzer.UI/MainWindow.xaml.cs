@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using DiskAnalyzer.Core.Models;
+using DiskAnalyzer.UI.Localization;
 using DiskAnalyzer.UI.ViewModels;
 
 namespace DiskAnalyzer.UI;
@@ -14,8 +15,9 @@ public partial class MainWindow : Window
 {
     public MainWindow()
     {
+        LocalizationService.Instance.ApplyTo(Application.Current?.Resources);
         InitializeComponent();
-        var vm = new MainViewModel();
+        var vm = new MainViewModel(LocalizationService.Instance);
         DataContext = vm;
 
         vm.RequestViewRefresh += () =>
@@ -33,6 +35,16 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel vm)
         {
             vm.SearchQuery = string.Empty;
+        }
+    }
+
+    private void OnLanguageMenuClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.ContextMenu != null)
+        {
+            button.ContextMenu.PlacementTarget = button;
+            button.ContextMenu.IsOpen = true;
+            e.Handled = true;
         }
     }
 

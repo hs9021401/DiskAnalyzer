@@ -1,0 +1,48 @@
+DiskAnalyzer - Third-party notices
+=================================
+
+DiskAnalyzer is distributed under the MIT License. This notice covers third-party
+software that may be included in the self-contained Windows portable distribution.
+
+Microsoft .NET 10
+-----------------
+
+The portable distribution is a self-contained .NET 10 Windows desktop application
+and includes portions of the .NET runtime and Windows Desktop runtime.
+
+The applicable Microsoft .NET Library License is available from Microsoft at:
+https://github.com/dotnet/core/blob/main/license-information.md
+
+The .NET runtime source license and runtime third-party notices are available at:
+https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
+https://github.com/dotnet/runtime/blob/main/THIRD-PARTY-NOTICES.TXT
+
+The exact SDK/runtime version used for a build should be recorded with the release.
+The current project targets net10.0-windows. Release maintainers should verify the
+runtime notices against the SDK used to create the portable artifact.
+
+Windows Desktop runtime notices
+--------------------------------
+
+The Windows Desktop runtime includes or references third-party components whose
+notices are maintained by the .NET project. The current upstream notice source is:
+https://github.com/dotnet/windowsdesktop
+
+Known notices relevant to the .NET Windows Desktop SDK include:
+
+* zlib - https://github.com/madler/zlib
+* Json.NET / Newtonsoft.Json - https://github.com/JamesNK/Newtonsoft.Json
+
+Test-only dependencies
+----------------------
+
+The following packages are used by the test project and are not part of the
+DiskAnalyzer portable application:
+
+* xUnit - Apache License 2.0 - https://github.com/xunit/xunit/blob/main/LICENSE
+* Visual Studio Test Platform - MIT - https://github.com/microsoft/vstest
+* Newtonsoft.Json - MIT - https://github.com/JamesNK/Newtonsoft.Json
+
+This notice is provided with the application for attribution and license
+information. It does not replace the complete license texts maintained by the
+respective upstream projects.

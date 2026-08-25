@@ -6,6 +6,7 @@
     <ui:ByteSizeConverter x:Key="ByteSizeConverter" />
     <ui:PercentageConverter x:Key="PercentageConverter" />
     <ui:FileIconConverter x:Key="FileIconConverter" />
+    <ui:DriveDisplayTitleConverter x:Key="DriveDisplayTitleConverter" />
     <ui:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     <ui:InvertBoolConverter x:Key="InvertBoolConverter" />
     <ui:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />

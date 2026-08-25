@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -17,12 +18,14 @@ using DiskAnalyzer.Core.Native;
 using DiskAnalyzer.Core.Scanning;
 using DiskAnalyzer.Core.Search;
 using DiskAnalyzer.UI.Helpers;
+using DiskAnalyzer.UI.Localization;
 using Microsoft.Win32;
 
 namespace DiskAnalyzer.UI.ViewModels;
 
 public class MainViewModel : ViewModelBase
 {
+    private readonly LocalizationService _localization;
     private readonly DiskScanEngine _engine = new();
     private CancellationTokenSource? _cts;
     private readonly Stopwatch _stopwatch = new();
@@ -32,8 +35,12 @@ public class MainViewModel : ViewModelBase
     private string _customFolderPath = string.Empty;
     private bool _isScanning;
     private ScanProgress? _scanProgress;
-    private string _statusText = "Ready to scan. Select a drive or browse a folder.";
+    private string _statusText = string.Empty;
     private string _scanMetricsText = string.Empty;
+    private string _statusMessageKey = "StatusReady";
+    private object?[] _statusMessageArguments = [];
+    private string? _scanMetricsKey;
+    private object?[] _scanMetricsArguments = [];
     private FileSystemItem? _rootItem;
     private ObservableCollection<FileSystemItem> _rootItems = [];
     private FileSystemItem? _treemapRoot;
@@ -42,14 +49,17 @@ public class MainViewModel : ViewModelBase
     private ObservableCollection<FileSystemItem> _filteredFiles = [];
     private ObservableCollection<ExtensionSummary> _extensionBreakdown = [];
     private ExtensionSummary? _selectedExtension;
+    private bool _selectedExtensionIsNoExtension;
     private string _searchQuery = string.Empty;
     private ObservableCollection<FileSystemItem> _breadcrumbPaths = [];
     private int _selectedTabIndex = 0;
     private List<FileSystemItem> _allFilesCache = [];
     private bool _showTreemap = true;
 
-    public MainViewModel()
+    public MainViewModel(LocalizationService? localization = null)
     {
+        _localization = localization ?? LocalizationService.Instance;
+        _localization.LanguageChanged += OnLanguageChanged;
         IsAdmin = PrivilegeManager.IsAdministrator;
 
         // Initialize Commands
@@ -57,6 +67,7 @@ public class MainViewModel : ViewModelBase
         CancelCommand = new RelayCommand(ExecuteCancel, () => IsScanning);
         BrowseFolderCommand = new RelayCommand(ExecuteBrowseFolder, () => !IsScanning);
         RelaunchAsAdminCommand = new RelayCommand(ExecuteRelaunchAsAdmin);
+        ChangeLanguageCommand = new RelayCommand<string>(ExecuteChangeLanguage);
 
         ToggleTreemapCommand = new RelayCommand(() => ShowTreemap = !ShowTreemap);
         ZoomTreemapCommand = new RelayCommand<FileSystemItem>(ExecuteZoomTreemap);
@@ -75,6 +86,7 @@ public class MainViewModel : ViewModelBase
         PermanentDeleteCommand = new RelayCommand(ExecutePermanentDelete, () => SelectedItem != null);
         ShowPropertiesCommand = new RelayCommand(ExecuteShowProperties, () => SelectedItem != null);
 
+        SetStatus("StatusReady");
         RefreshDrives();
     }
 
@@ -145,6 +157,8 @@ public class MainViewModel : ViewModelBase
         set => SetProperty(ref _scanMetricsText, value);
     }
 
+    public ReadOnlyObservableCollection<LanguageOption> AvailableLanguages => _localization.Languages;
+
     public FileSystemItem? RootItem
     {
         get => _rootItem;
@@ -179,6 +193,7 @@ public class MainViewModel : ViewModelBase
                 UpdateBreadcrumbs();
                 ZoomOutTreemapCommand.RaiseCanExecuteChanged();
                 ResetTreemapZoomCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged(nameof(ActiveTreemapText));
             }
         }
     }
@@ -199,6 +214,8 @@ public class MainViewModel : ViewModelBase
                 DeleteToRecycleBinCommand.RaiseCanExecuteChanged();
                 PermanentDeleteCommand.RaiseCanExecuteChanged();
                 ShowPropertiesCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged(nameof(SelectedItemText));
+                OnPropertyChanged(nameof(SelectedItemSizeText));
             }
         }
     }
@@ -228,6 +245,10 @@ public class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedExtension, value))
             {
+                _selectedExtensionIsNoExtension = value != null && string.Equals(
+                    value.Extension,
+                    _localization.Get("NoExtensionLabel"),
+                    StringComparison.OrdinalIgnoreCase);
                 ApplyFileFilter();
             }
         }
@@ -269,7 +290,20 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    public string TreemapToggleText => ShowTreemap ? "🗺️ 隱藏熱力圖" : "🗺️ 顯示熱力圖";
+    public string TreemapToggleText => _localization.Get(
+        ShowTreemap ? "HeatmapHideButton" : "HeatmapShowButton");
+
+    public string ActiveTreemapText => TreemapRoot == null
+        ? string.Empty
+        : _localization.Format("ActiveFormat", TreemapRoot.SizeFormatted);
+
+    public string SelectedItemText => SelectedItem == null
+        ? string.Empty
+        : _localization.Format("SelectedFormat", SelectedItem.Name);
+
+    public string SelectedItemSizeText => SelectedItem == null
+        ? string.Empty
+        : _localization.Format("SelectedSizeFormat", SelectedItem.SizeFormatted);
 
     #endregion
 
@@ -279,6 +313,7 @@ public class MainViewModel : ViewModelBase
     public RelayCommand CancelCommand { get; }
     public RelayCommand BrowseFolderCommand { get; }
     public RelayCommand RelaunchAsAdminCommand { get; }
+    public RelayCommand<string> ChangeLanguageCommand { get; }
 
     public RelayCommand ToggleTreemapCommand { get; }
     public RelayCommand<FileSystemItem> ZoomTreemapCommand { get; }
@@ -300,6 +335,114 @@ public class MainViewModel : ViewModelBase
     #endregion
 
     #region Command Execution Methods
+
+    private void ExecuteChangeLanguage(string? cultureName)
+    {
+        if (!string.IsNullOrWhiteSpace(cultureName))
+        {
+            _localization.SetLanguage(cultureName);
+        }
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        string? previousExtension = _selectedExtension?.Extension;
+        bool hadNoExtensionSelected = _selectedExtensionIsNoExtension;
+
+        StatusText = _localization.Format(_statusMessageKey, _statusMessageArguments);
+        ScanMetricsText = _scanMetricsKey == null
+            ? string.Empty
+            : _localization.Format(_scanMetricsKey, _scanMetricsArguments);
+
+        OnPropertyChanged(nameof(TreemapToggleText));
+        OnPropertyChanged(nameof(ActiveTreemapText));
+        OnPropertyChanged(nameof(SelectedItemText));
+        OnPropertyChanged(nameof(SelectedItemSizeText));
+        OnPropertyChanged(nameof(Drives));
+
+        if (RootItem != null)
+        {
+            UpdateExtensionBreakdown();
+
+            ExtensionSummary? replacement = hadNoExtensionSelected
+                ? ExtensionBreakdown.FirstOrDefault(extension => string.Equals(
+                    extension.Extension,
+                    _localization.Get("NoExtensionLabel"),
+                    StringComparison.OrdinalIgnoreCase))
+                : previousExtension == null
+                    ? null
+                    : ExtensionBreakdown.FirstOrDefault(extension => string.Equals(
+                        extension.Extension,
+                        previousExtension,
+                        StringComparison.OrdinalIgnoreCase));
+
+            if (!ReferenceEquals(_selectedExtension, replacement))
+            {
+                SelectedExtension = replacement;
+            }
+            ApplyFileFilter();
+        }
+    }
+
+    private void SetStatus(string resourceKey, params object?[] arguments)
+    {
+        _statusMessageKey = resourceKey;
+        _statusMessageArguments = arguments;
+        StatusText = _localization.Format(resourceKey, arguments);
+    }
+
+    private void SetMetrics(string? resourceKey, params object?[] arguments)
+    {
+        _scanMetricsKey = resourceKey;
+        _scanMetricsArguments = arguments;
+        ScanMetricsText = resourceKey == null
+            ? string.Empty
+            : _localization.Format(resourceKey, arguments);
+    }
+
+    private void SetProgressStatus(ScanProgress progress)
+    {
+        switch (progress.Phase)
+        {
+            case ScanPhase.Initializing:
+                SetStatus("ProgressInitializing");
+                break;
+            case ScanPhase.ReadingMft:
+                SetStatus("ProgressReadingMft", progress.FilesScannedFormatted, progress.FoldersScannedFormatted);
+                break;
+            case ScanPhase.ReadingUsnJournal:
+                SetStatus("ProgressReadingUsn", progress.FilesScannedFormatted);
+                break;
+            case ScanPhase.ScanningDirectories:
+                SetStatus("ProgressScanningFolder", progress.CurrentFolder);
+                break;
+            case ScanPhase.BuildingTree:
+                SetStatus("ProgressBuildingTree");
+                break;
+            case ScanPhase.CalculatingSizes:
+                SetStatus("ProgressCalculatingSizes");
+                break;
+            case ScanPhase.Sorting:
+                SetStatus("ProgressSorting");
+                break;
+            case ScanPhase.Complete:
+                SetStatus(
+                    "ProgressComplete",
+                    progress.ElapsedTime.TotalSeconds.ToString("F2", _localization.CurrentCulture),
+                    progress.FilesScannedFormatted,
+                    progress.FoldersScannedFormatted);
+                break;
+            case ScanPhase.Cancelled:
+                SetStatus("ProgressCancelled");
+                break;
+            case ScanPhase.Error:
+                SetStatus("ProgressError");
+                break;
+            default:
+                SetStatus("ProgressScanning");
+                break;
+        }
+    }
 
     public void RefreshDrives()
     {
@@ -332,21 +475,30 @@ public class MainViewModel : ViewModelBase
 
         if (string.IsNullOrWhiteSpace(targetPath) || (!Directory.Exists(targetPath) && !File.Exists(targetPath)))
         {
-            MessageBox.Show($"Path '{targetPath}' is not accessible or does not exist.", "Invalid Path", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                _localization.Format("InvalidPathMessage", targetPath),
+                _localization.Get("InvalidPathTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
 
         _cts = new CancellationTokenSource();
         IsScanning = true;
         _stopwatch.Restart();
-        StatusText = $"Scanning '{targetPath}'...";
-        ScanMetricsText = "Initializing...";
+        SetStatus("ScanningPathStatus", targetPath);
+        SetMetrics("InitializingStatus");
 
         var progress = new Progress<ScanProgress>(p =>
         {
             ScanProgress = p;
-            StatusText = !string.IsNullOrEmpty(p.CurrentFolder) ? $"Scanning: {p.CurrentFolder}" : p.StatusMessage;
-            ScanMetricsText = $"{p.FilesScannedFormatted} files, {p.FoldersScannedFormatted} folders ({p.TotalBytesFormatted}) - {p.SpeedItemsFormatted}";
+            SetProgressStatus(p);
+            SetMetrics(
+                "ScanMetricsFormat",
+                p.FilesScannedFormatted,
+                p.FoldersScannedFormatted,
+                p.TotalBytesFormatted,
+                p.SpeedItemsFormatted);
         });
 
         try
@@ -371,6 +523,7 @@ public class MainViewModel : ViewModelBase
 
             // Generate Extension Breakdown
             var extensions = DiskScanEngine.ComputeExtensionSummaries(root);
+            LocalizeNoExtensionLabels(extensions);
             ExtensionBreakdown = new ObservableCollection<ExtensionSummary>(extensions);
 
             // Flatten files for high-speed tabular search and flat file grid
@@ -383,8 +536,16 @@ public class MainViewModel : ViewModelBase
             double elapsedSec = _stopwatch.Elapsed.TotalSeconds;
             double filesPerSec = elapsedSec > 0 ? root.FileCount / elapsedSec : 0;
 
-            StatusText = $"Scan completed in {elapsedSec:F2}s ({root.FileCount:N0} files, {root.FolderCount:N0} folders, {root.SizeFormatted})";
-            ScanMetricsText = $"{filesPerSec:N0} files/sec - {root.SizeFormatted} total";
+            SetStatus(
+                "ScanCompletedStatus",
+                elapsedSec.ToString("F2", _localization.CurrentCulture),
+                root.FileCount.ToString("N0", _localization.CurrentCulture),
+                root.FolderCount.ToString("N0", _localization.CurrentCulture),
+                root.SizeFormatted);
+            SetMetrics(
+                "ScanCompletedMetrics",
+                filesPerSec.ToString("N0", _localization.CurrentCulture),
+                root.SizeFormatted);
 
             // Refresh drive information to show updated usage gauge
             RefreshDrives();
@@ -392,15 +553,21 @@ public class MainViewModel : ViewModelBase
         catch (OperationCanceledException)
         {
             _stopwatch.Stop();
-            StatusText = $"Scan canceled after {_stopwatch.Elapsed.TotalSeconds:F2}s.";
-            ScanMetricsText = "Canceled";
+            SetStatus(
+                "ScanCanceledStatus",
+                _stopwatch.Elapsed.TotalSeconds.ToString("F2", _localization.CurrentCulture));
+            SetMetrics("CanceledMetrics");
         }
         catch (Exception ex)
         {
             _stopwatch.Stop();
-            StatusText = $"Scan error: {ex.Message}";
-            ScanMetricsText = "Error";
-            MessageBox.Show($"Failed to scan '{targetPath}':\n\n{ex.Message}", "Scan Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            SetStatus("ScanErrorStatus", ex.Message);
+            SetMetrics("ErrorMetrics");
+            MessageBox.Show(
+                _localization.Format("ScanErrorMessage", targetPath, ex.Message),
+                _localization.Get("ScanErrorTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
         finally
         {
@@ -414,7 +581,7 @@ public class MainViewModel : ViewModelBase
     {
         if (_cts != null && !_cts.IsCancellationRequested)
         {
-            StatusText = "Canceling scan...";
+            SetStatus("CancelingStatus");
             _cts.Cancel();
         }
     }
@@ -423,7 +590,7 @@ public class MainViewModel : ViewModelBase
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "Select Folder to Scan",
+            Title = _localization.Get("SelectFolderDialogTitle"),
             Multiselect = false
         };
 
@@ -450,7 +617,11 @@ public class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Could not elevate application privileges:\n{ex.Message}", "Elevation Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                _localization.Format("ElevationMessage", ex.Message),
+                _localization.Get("ElevationTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
     }
 
@@ -501,7 +672,9 @@ public class MainViewModel : ViewModelBase
         var criteria = new SearchCriteria
         {
             Query = string.IsNullOrWhiteSpace(SearchQuery) ? null : SearchQuery.Trim(),
-            Extension = SelectedExtension?.Extension == "[No Extension]" ? string.Empty : SelectedExtension?.Extension
+            Extension = SelectedExtension?.Extension == _localization.Get("NoExtensionLabel")
+                ? string.Empty
+                : SelectedExtension?.Extension
         };
 
         var filtered = FileSearchEngine.Search(_allFilesCache, criteria);
@@ -517,25 +690,33 @@ public class MainViewModel : ViewModelBase
 
         var saveDialog = new SaveFileDialog
         {
-            Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+            Filter = _localization.Get("ExportCsvFilter"),
             DefaultExt = "csv",
             FileName = $"DiskAnalyzer_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv",
-            Title = "Export Disk Analysis to CSV"
+            Title = _localization.Get("ExportDialogTitle")
         };
 
         if (saveDialog.ShowDialog() == true)
         {
             try
             {
-                StatusText = "Exporting to CSV...";
+                SetStatus("ExportingStatus");
                 await CsvExporter.ExportTreeToCsvAsync(RootItem, saveDialog.FileName);
-                StatusText = $"Exported successfully to {Path.GetFileName(saveDialog.FileName)}";
-                MessageBox.Show($"Export successfully saved to:\n{saveDialog.FileName}", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                SetStatus("ExportedStatus", Path.GetFileName(saveDialog.FileName));
+                MessageBox.Show(
+                    _localization.Format("ExportCompleteMessage", saveDialog.FileName),
+                    _localization.Get("ExportCompleteTitle"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                StatusText = $"Export error: {ex.Message}";
-                MessageBox.Show($"Failed to export CSV:\n{ex.Message}", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                SetStatus("ExportErrorStatus", ex.Message);
+                MessageBox.Show(
+                    _localization.Format("ExportFailedMessage", ex.Message),
+                    _localization.Get("ExportFailedTitle"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
     }
@@ -600,13 +781,13 @@ public class MainViewModel : ViewModelBase
         {
             string text = string.Join(Environment.NewLine, targets.Select(t => t.GetFullPath()));
             Clipboard.SetText(text);
-            StatusText = targets.Count == 1
-                ? $"Copied path to clipboard: {targets[0].GetFullPath()}"
-                : $"Copied {targets.Count} paths to clipboard.";
+            SetStatus(
+                targets.Count == 1 ? "CopiedPathStatus" : "CopiedPathsStatus",
+                targets.Count == 1 ? targets[0].GetFullPath() : targets.Count);
         }
         catch (Exception ex)
         {
-            StatusText = $"Copy failed: {ex.Message}";
+            SetStatus("CopyFailedStatus", ex.Message);
         }
     }
 
@@ -619,24 +800,24 @@ public class MainViewModel : ViewModelBase
             var sb = new StringBuilder();
             foreach (var item in targets)
             {
-                sb.AppendLine($"Name: {item.Name}");
-                sb.AppendLine($"Full Path: {item.GetFullPath()}");
-                sb.AppendLine($"Size: {item.SizeFormatted} ({item.Size:N0} bytes)");
-                sb.AppendLine($"Allocated: {item.AllocatedSizeFormatted} ({item.AllocatedSize:N0} bytes)");
-                sb.AppendLine($"Files: {item.FileCount:N0}");
-                sb.AppendLine($"Folders: {item.FolderCount:N0}");
-                sb.AppendLine($"Modified: {item.LastModified:yyyy-MM-dd HH:mm:ss}");
-                sb.AppendLine($"Attributes: {item.Attributes}");
+                sb.AppendLine($"{_localization.Get("TreeNameHeader")}: {item.Name}");
+                sb.AppendLine($"{_localization.Get("FullPathLabel")}: {item.GetFullPath()}");
+                sb.AppendLine($"{_localization.Get("SizeHeader")}: {item.SizeFormatted} ({item.Size.ToString("N0", _localization.CurrentCulture)} {_localization.Get("BytesLabel")})");
+                sb.AppendLine($"{_localization.Get("AllocatedHeader")}: {item.AllocatedSizeFormatted} ({item.AllocatedSize.ToString("N0", _localization.CurrentCulture)} {_localization.Get("BytesLabel")})");
+                sb.AppendLine($"{_localization.Get("FilesHeader")}: {item.FileCount.ToString("N0", _localization.CurrentCulture)}");
+                sb.AppendLine($"{_localization.Get("FoldersHeader")}: {item.FolderCount.ToString("N0", _localization.CurrentCulture)}");
+                sb.AppendLine($"{_localization.Get("LastModifiedHeader")}: {item.LastModified:yyyy-MM-dd HH:mm:ss}");
+                sb.AppendLine($"{_localization.Get("AttributesHeader")}: {item.Attributes}");
                 sb.AppendLine(new string('-', 40));
             }
             Clipboard.SetText(sb.ToString().TrimEnd());
-            StatusText = targets.Count == 1
-                ? $"Copied details for {targets[0].Name} to clipboard."
-                : $"Copied details for {targets.Count} items to clipboard.";
+            SetStatus(
+                targets.Count == 1 ? "CopiedDetailsStatus" : "CopiedDetailsManyStatus",
+                targets.Count == 1 ? targets[0].Name : targets.Count);
         }
         catch (Exception ex)
         {
-            StatusText = $"Copy failed: {ex.Message}";
+            SetStatus("CopyFailedStatus", ex.Message);
         }
     }
 
@@ -650,7 +831,11 @@ public class MainViewModel : ViewModelBase
             string path = item.GetFullPath();
             if (!ShellOperations.Open(path))
             {
-                MessageBox.Show($"Could not open '{path}'.", "Open Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    _localization.Format("OpenFileFailedMessage", path),
+                    _localization.Get("OpenFailedTitle"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
             }
         }
     }
@@ -665,7 +850,11 @@ public class MainViewModel : ViewModelBase
             string path = item.GetFullPath();
             if (!ShellOperations.SelectInExplorer(path))
             {
-                MessageBox.Show($"Could not open '{path}' in File Explorer.", "Open Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    _localization.Format("OpenFolderFailedMessage", path),
+                    _localization.Get("OpenFailedTitle"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
             }
         }
     }
@@ -690,12 +879,12 @@ public class MainViewModel : ViewModelBase
         if (targets.Count == 0) return;
 
         string msg = targets.Count == 1
-            ? $"Are you sure you want to send '{targets[0].GetFullPath()}' to the Recycle Bin?"
-            : $"Are you sure you want to send {targets.Count} selected items to the Recycle Bin?";
+            ? _localization.Format("ConfirmDeleteSingle", targets[0].GetFullPath())
+            : _localization.Format("ConfirmDeleteMany", targets.Count);
 
         var confirm = MessageBox.Show(
             msg,
-            "Confirm Delete",
+            _localization.Get("ConfirmDeleteTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
 
@@ -715,13 +904,17 @@ public class MainViewModel : ViewModelBase
             if (deletedCount > 0)
             {
                 RefreshViewsAfterModification();
-                StatusText = deletedCount == 1
-                    ? $"Moved '{targets[0].GetFullPath()}' to Recycle Bin."
-                    : $"Moved {deletedCount} items to Recycle Bin.";
+                SetStatus(
+                    deletedCount == 1 ? "MovedToRecycleBinStatus" : "MovedItemsToRecycleBinStatus",
+                    deletedCount == 1 ? targets[0].GetFullPath() : deletedCount);
             }
             else
             {
-                MessageBox.Show("Failed to send item(s) to the Recycle Bin.", "Delete Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(
+                    _localization.Get("DeleteFailedMessage"),
+                    _localization.Get("DeleteFailedTitle"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
     }
@@ -732,12 +925,12 @@ public class MainViewModel : ViewModelBase
         if (targets.Count == 0) return;
 
         string msg = targets.Count == 1
-            ? $"WARNING: Are you sure you want to PERMANENTLY delete:\n'{targets[0].GetFullPath()}'?\n\nThis cannot be undone!"
-            : $"WARNING: Are you sure you want to PERMANENTLY delete {targets.Count} selected items?\n\nThis cannot be undone!";
+            ? _localization.Format("ConfirmPermanentDeleteSingle", targets[0].GetFullPath())
+            : _localization.Format("ConfirmPermanentDeleteMany", targets.Count);
 
         var confirm = MessageBox.Show(
             msg,
-            "Confirm Permanent Delete",
+            _localization.Get("ConfirmPermanentDeleteTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
 
@@ -757,13 +950,17 @@ public class MainViewModel : ViewModelBase
             if (deletedCount > 0)
             {
                 RefreshViewsAfterModification();
-                StatusText = deletedCount == 1
-                    ? $"Permanently deleted '{targets[0].GetFullPath()}'."
-                    : $"Permanently deleted {deletedCount} items.";
+                SetStatus(
+                    deletedCount == 1 ? "PermanentlyDeletedStatus" : "PermanentlyDeletedItemsStatus",
+                    deletedCount == 1 ? targets[0].GetFullPath() : deletedCount);
             }
             else
             {
-                MessageBox.Show("Failed to permanently delete item(s).", "Delete Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(
+                    _localization.Get("PermanentDeleteFailedMessage"),
+                    _localization.Get("PermanentDeleteFailedTitle"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
     }
@@ -831,7 +1028,9 @@ public class MainViewModel : ViewModelBase
         var dict = new Dictionary<string, (long Size, long Count)>(StringComparer.OrdinalIgnoreCase);
         foreach (var f in _allFilesCache)
         {
-            string ext = string.IsNullOrEmpty(f.Extension) ? "[No Extension]" : f.Extension.ToUpperInvariant();
+            string ext = string.IsNullOrEmpty(f.Extension)
+                ? _localization.Get("NoExtensionLabel")
+                : f.Extension.ToUpperInvariant();
             if (dict.TryGetValue(ext, out var val))
             {
                 dict[ext] = (val.Size + f.Size, val.Count + 1);
@@ -857,6 +1056,17 @@ public class MainViewModel : ViewModelBase
         }
         list.Sort((a, b) => b.TotalSize.CompareTo(a.TotalSize));
         ExtensionBreakdown = new ObservableCollection<ExtensionSummary>(list);
+    }
+
+    private void LocalizeNoExtensionLabels(IEnumerable<ExtensionSummary> extensions)
+    {
+        foreach (var extension in extensions)
+        {
+            if (string.Equals(extension.Extension, "[No Extension]", StringComparison.OrdinalIgnoreCase))
+            {
+                extension.Extension = _localization.Get("NoExtensionLabel");
+            }
+        }
     }
 
     #endregion

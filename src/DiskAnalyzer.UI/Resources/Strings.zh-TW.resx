@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="WindowTitle" xml:space="preserve"><value>DiskAnalyzer - 超高速磁碟空間視覺化工具</value></data>
+  <data name="MenuOpen" xml:space="preserve"><value>開啟</value></data>
+  <data name="MenuRevealInExplorer" xml:space="preserve"><value>在檔案總管中顯示</value></data>
+  <data name="MenuCopyFullPath" xml:space="preserve"><value>複製完整路徑</value></data>
+  <data name="MenuCopyAllDetails" xml:space="preserve"><value>複製所有詳細資訊</value></data>
+  <data name="MenuOpenCommandPromptHere" xml:space="preserve"><value>在此處開啟命令提示字元</value></data>
+  <data name="MenuOpenPowerShellHere" xml:space="preserve"><value>在此處開啟 PowerShell</value></data>
+  <data name="MenuZoomIntoFolder" xml:space="preserve"><value>在矩形樹狀圖中縮放至資料夾</value></data>
+  <data name="MenuToggleHeatmap" xml:space="preserve"><value>切換熱力圖</value></data>
+  <data name="MenuDeleteToRecycleBin" xml:space="preserve"><value>移至資源回收筒</value></data>
+  <data name="MenuPermanentlyDelete" xml:space="preserve"><value>永久刪除...</value></data>
+  <data name="MenuProperties" xml:space="preserve"><value>內容</value></data>
+  <data name="BrandSubtitle" xml:space="preserve"><value>超高速 NTFS MFT 引擎</value></data>
+  <data name="BrowseButton" xml:space="preserve"><value>📂 瀏覽...</value></data>
+  <data name="BrowseTooltip" xml:space="preserve"><value>選擇要分析的自訂資料夾</value></data>
+  <data name="ScanButton" xml:space="preserve"><value>▶ 掃描</value></data>
+  <data name="ScanTooltip" xml:space="preserve"><value>開始快速磁碟掃描</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>⏹ 取消</value></data>
+  <data name="CancelTooltip" xml:space="preserve"><value>停止目前的掃描</value></data>
+  <data name="ClearSearchTooltip" xml:space="preserve"><value>清除搜尋篩選</value></data>
+  <data name="AdminBadge" xml:space="preserve"><value>系統管理員（MFT 直接模式）</value></data>
+  <data name="RestartAdminButton" xml:space="preserve"><value>⚡ 以系統管理員重新啟動</value></data>
+  <data name="RestartAdminTooltip" xml:space="preserve"><value>以系統管理員權限重新啟動，可讓 NTFS MFT 掃描速度提升 100 倍</value></data>
+  <data name="HeatmapHideButton" xml:space="preserve"><value>🗺️ 隱藏熱力圖</value></data>
+  <data name="HeatmapShowButton" xml:space="preserve"><value>🗺️ 顯示熱力圖</value></data>
+  <data name="HeatmapTooltip" xml:space="preserve"><value>顯示或隱藏熱力圖面板（隱藏後可降低記憶體與 CPU 使用量）</value></data>
+  <data name="ExportCsvButton" xml:space="preserve"><value>📥 匯出 CSV</value></data>
+  <data name="ExportCsvTooltip" xml:space="preserve"><value>將樹狀結構匯出為標準 CSV 格式</value></data>
+  <data name="CopyInfoButton" xml:space="preserve"><value>📋 複製資訊</value></data>
+  <data name="CopyInfoTooltip" xml:space="preserve"><value>將選取項目的資訊複製到剪貼簿</value></data>
+  <data name="LanguageMenu" xml:space="preserve"><value>語言</value></data>
+  <data name="LanguageSystemDefault" xml:space="preserve"><value>系統預設</value></data>
+  <data name="TreeViewTab" xml:space="preserve"><value>🌲 樹狀檢視</value></data>
+  <data name="TreeNameHeader" xml:space="preserve"><value>名稱</value></data>
+  <data name="TreeParentPercentHeader" xml:space="preserve"><value>佔父層比例</value></data>
+  <data name="SizeHeader" xml:space="preserve"><value>大小</value></data>
+  <data name="AllocatedHeader" xml:space="preserve"><value>實際佔用</value></data>
+  <data name="FilesHeader" xml:space="preserve"><value>檔案</value></data>
+  <data name="FoldersHeader" xml:space="preserve"><value>資料夾</value></data>
+  <data name="TotalPercentHeader" xml:space="preserve"><value>佔總量比例</value></data>
+  <data name="LastModifiedHeader" xml:space="preserve"><value>最後修改</value></data>
+  <data name="AttributesHeader" xml:space="preserve"><value>屬性</value></data>
+  <data name="FileViewTab" xml:space="preserve"><value>📄 檔案檢視（最大檔案）</value></data>
+  <data name="FileNameHeader" xml:space="preserve"><value>檔案名稱</value></data>
+  <data name="FolderHeader" xml:space="preserve"><value>資料夾</value></data>
+  <data name="ExtensionShortHeader" xml:space="preserve"><value>副檔名</value></data>
+  <data name="DateModifiedHeader" xml:space="preserve"><value>修改日期</value></data>
+  <data name="FileTypesTab" xml:space="preserve"><value>📊 檔案類型（分析）</value></data>
+  <data name="TotalSizeHeader" xml:space="preserve"><value>總大小</value></data>
+  <data name="PercentOfTotalHeader" xml:space="preserve"><value>佔總量比例</value></data>
+  <data name="FileCountHeader" xml:space="preserve"><value>檔案數量</value></data>
+  <data name="AllocatedSizeHeader" xml:space="preserve"><value>實際佔用大小</value></data>
+  <data name="RootButton" xml:space="preserve"><value>🏠 根目錄</value></data>
+  <data name="RootTooltip" xml:space="preserve"><value>將矩形樹狀圖縮放重設至根目錄</value></data>
+  <data name="UpButton" xml:space="preserve"><value>⬆ 上一層</value></data>
+  <data name="UpTooltip" xml:space="preserve"><value>縮小至上層資料夾</value></data>
+  <data name="ActiveFormat" xml:space="preserve"><value>目前：{0}</value></data>
+  <data name="SelectedFormat" xml:space="preserve"><value>已選取：{0}</value></data>
+  <data name="SelectedSizeFormat" xml:space="preserve"><value>（{0}）</value></data>
+  <data name="StatusReady" xml:space="preserve"><value>準備掃描。請選擇磁碟或瀏覽資料夾。</value></data>
+  <data name="InvalidPathTitle" xml:space="preserve"><value>路徑無效</value></data>
+  <data name="InvalidPathMessage" xml:space="preserve"><value>無法存取路徑「{0}」，或該路徑不存在。</value></data>
+  <data name="ScanningPathStatus" xml:space="preserve"><value>正在掃描「{0}」...</value></data>
+  <data name="InitializingStatus" xml:space="preserve"><value>正在初始化...</value></data>
+  <data name="ScanningFolderStatus" xml:space="preserve"><value>正在掃描：{0}</value></data>
+  <data name="ScanMetricsFormat" xml:space="preserve"><value>{0} 個檔案、{1} 個資料夾（{2}）- {3}</value></data>
+  <data name="ScanCompletedStatus" xml:space="preserve"><value>掃描完成，耗時 {0} 秒（{1} 個檔案、{2} 個資料夾、{3}）</value></data>
+  <data name="ScanCompletedMetrics" xml:space="preserve"><value>{0} 個檔案/秒 - 總計 {1}</value></data>
+  <data name="ScanCanceledStatus" xml:space="preserve"><value>掃描已取消，耗時 {0} 秒。</value></data>
+  <data name="CanceledMetrics" xml:space="preserve"><value>已取消</value></data>
+  <data name="ScanErrorStatus" xml:space="preserve"><value>掃描錯誤：{0}</value></data>
+  <data name="ErrorMetrics" xml:space="preserve"><value>錯誤</value></data>
+  <data name="ScanErrorTitle" xml:space="preserve"><value>掃描錯誤</value></data>
+  <data name="ScanErrorMessage" xml:space="preserve"><value>掃描「{0}」失敗：&#xA;&#xA;{1}</value></data>
+  <data name="CancelingStatus" xml:space="preserve"><value>正在取消掃描...</value></data>
+  <data name="SelectFolderDialogTitle" xml:space="preserve"><value>選擇要掃描的資料夾</value></data>
+  <data name="ElevationTitle" xml:space="preserve"><value>需要提高權限</value></data>
+  <data name="ElevationMessage" xml:space="preserve"><value>無法提升應用程式權限：&#xA;{0}</value></data>
+  <data name="ExportCsvFilter" xml:space="preserve"><value>CSV 檔案 (*.csv)|*.csv|所有檔案 (*.*)|*.*</value></data>
+  <data name="ExportDialogTitle" xml:space="preserve"><value>將磁碟分析匯出為 CSV</value></data>
+  <data name="ExportingStatus" xml:space="preserve"><value>正在匯出 CSV...</value></data>
+  <data name="ExportedStatus" xml:space="preserve"><value>已成功匯出至 {0}</value></data>
+  <data name="ExportCompleteTitle" xml:space="preserve"><value>匯出完成</value></data>
+  <data name="ExportCompleteMessage" xml:space="preserve"><value>匯出檔案已儲存至：&#xA;{0}</value></data>
+  <data name="ExportErrorStatus" xml:space="preserve"><value>匯出錯誤：{0}</value></data>
+  <data name="ExportFailedTitle" xml:space="preserve"><value>匯出失敗</value></data>
+  <data name="ExportFailedMessage" xml:space="preserve"><value>匯出 CSV 失敗：&#xA;{0}</value></data>
+  <data name="CopiedPathStatus" xml:space="preserve"><value>已將路徑複製到剪貼簿：{0}</value></data>
+  <data name="CopiedPathsStatus" xml:space="preserve"><value>已將 {0} 個路徑複製到剪貼簿。</value></data>
+  <data name="CopiedDetailsStatus" xml:space="preserve"><value>已將 {0} 的詳細資訊複製到剪貼簿。</value></data>
+  <data name="CopiedDetailsManyStatus" xml:space="preserve"><value>已將 {0} 個項目的詳細資訊複製到剪貼簿。</value></data>
+  <data name="CopyFailedStatus" xml:space="preserve"><value>複製失敗：{0}</value></data>
+  <data name="OpenFailedTitle" xml:space="preserve"><value>開啟失敗</value></data>
+  <data name="OpenFileFailedMessage" xml:space="preserve"><value>無法開啟「{0}」。</value></data>
+  <data name="OpenFolderFailedMessage" xml:space="preserve"><value>無法在檔案總管中開啟「{0}」。</value></data>
+  <data name="ConfirmDeleteTitle" xml:space="preserve"><value>確認刪除</value></data>
+  <data name="ConfirmDeleteSingle" xml:space="preserve"><value>確定要將「{0}」移至資源回收筒嗎？</value></data>
+  <data name="ConfirmDeleteMany" xml:space="preserve"><value>確定要將選取的 {0} 個項目移至資源回收筒嗎？</value></data>
+  <data name="MovedToRecycleBinStatus" xml:space="preserve"><value>已將「{0}」移至資源回收筒。</value></data>
+  <data name="MovedItemsToRecycleBinStatus" xml:space="preserve"><value>已將 {0} 個項目移至資源回收筒。</value></data>
+  <data name="DeleteFailedTitle" xml:space="preserve"><value>刪除失敗</value></data>
+  <data name="DeleteFailedMessage" xml:space="preserve"><value>無法將項目移至資源回收筒。</value></data>
+  <data name="ConfirmPermanentDeleteTitle" xml:space="preserve"><value>確認永久刪除</value></data>
+  <data name="ConfirmPermanentDeleteSingle" xml:space="preserve"><value>警告：確定要永久刪除：&#xA;「{0}」嗎？&#xA;&#xA;此操作無法復原！</value></data>
+  <data name="ConfirmPermanentDeleteMany" xml:space="preserve"><value>警告：確定要永久刪除選取的 {0} 個項目嗎？&#xA;&#xA;此操作無法復原！</value></data>
+  <data name="PermanentlyDeletedStatus" xml:space="preserve"><value>已永久刪除「{0}」。</value></data>
+  <data name="PermanentlyDeletedItemsStatus" xml:space="preserve"><value>已永久刪除 {0} 個項目。</value></data>
+  <data name="PermanentDeleteFailedTitle" xml:space="preserve"><value>刪除失敗</value></data>
+  <data name="PermanentDeleteFailedMessage" xml:space="preserve"><value>無法永久刪除項目。</value></data>
+  <data name="ProgressInitializing" xml:space="preserve"><value>正在初始化掃描...</value></data>
+  <data name="ProgressReadingMft" xml:space="preserve"><value>正在讀取 NTFS MFT 記錄（{0} 個檔案、{1} 個資料夾）...</value></data>
+  <data name="ProgressReadingUsn" xml:space="preserve"><value>正在讀取 USN Change Journal（{0} 個項目）...</value></data>
+  <data name="ProgressScanningFolder" xml:space="preserve"><value>正在掃描：{0}</value></data>
+  <data name="ProgressBuildingTree" xml:space="preserve"><value>正在建立目錄階層...</value></data>
+  <data name="ProgressCalculatingSizes" xml:space="preserve"><value>正在彙整資料夾大小與檔案數量...</value></data>
+  <data name="ProgressSorting" xml:space="preserve"><value>正在排序樹狀項目...</value></data>
+  <data name="ProgressComplete" xml:space="preserve"><value>掃描完成，耗時 {0} 秒（{1} 個檔案、{2} 個資料夾）</value></data>
+  <data name="ProgressCancelled" xml:space="preserve"><value>掃描已取消。</value></data>
+  <data name="ProgressError" xml:space="preserve"><value>掃描發生錯誤。</value></data>
+  <data name="ProgressScanning" xml:space="preserve"><value>正在掃描...</value></data>
+  <data name="NoExtensionLabel" xml:space="preserve"><value>[無副檔名]</value></data>
+  <data name="FolderAnalysisTitle" xml:space="preserve"><value>資料夾分析：{0}</value></data>
+  <data name="CustomFolderLabel" xml:space="preserve"><value>自訂資料夾</value></data>
+  <data name="ScanningActiveTarget" xml:space="preserve"><value>正在掃描目前目標</value></data>
+  <data name="NoDriveSelected" xml:space="preserve"><value>未選取磁碟</value></data>
+  <data name="TotalFormat" xml:space="preserve"><value>總計：{0}</value></data>
+  <data name="UsedFormat" xml:space="preserve"><value>已使用：{0}（{1}%）</value></data>
+  <data name="FreeFormat" xml:space="preserve"><value>可用：{0}（{1}%）</value></data>
+  <data name="LocalDiskLabel" xml:space="preserve"><value>本機磁碟</value></data>
+  <data name="TreemapSizeFormat" xml:space="preserve"><value>大小：{0}（{1} 位元組）</value></data>
+  <data name="TreemapAllocatedFormat" xml:space="preserve"><value>已配置：{0}（{1} 位元組）</value></data>
+  <data name="TreemapParentPercentFormat" xml:space="preserve"><value>父層佔比：{0}%</value></data>
+  <data name="TreemapFilesFoldersFormat" xml:space="preserve"><value>檔案／資料夾：{0} 個檔案，{1} 個資料夾</value></data>
+  <data name="TreemapFilesFoldersValueFormat" xml:space="preserve"><value>{0} 個檔案，{1} 個資料夾</value></data>
+  <data name="TreemapModifiedFormat" xml:space="preserve"><value>修改時間：{0}</value></data>
+  <data name="TreemapTypeFormat" xml:space="preserve"><value>類型：{0}</value></data>
+  <data name="FullPathLabel" xml:space="preserve"><value>完整路徑</value></data>
+  <data name="BytesLabel" xml:space="preserve"><value>位元組</value></data>
+  <data name="UnexpectedErrorTitle" xml:space="preserve"><value>DiskAnalyzer 錯誤</value></data>
+  <data name="UnexpectedErrorMessage" xml:space="preserve"><value>發生未預期的錯誤：&#xA;&#xA;{0}&#xA;&#xA;詳細資訊已記錄至：&#xA;{1}</value></data>
+  <data name="NoTreemapDataMessage" xml:space="preserve"><value>尚無樹狀矩形圖資料。請選取磁碟並按一下掃描。</value></data>
+</root>

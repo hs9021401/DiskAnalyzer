@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using DiskAnalyzer.UI.Localization;
 
 namespace DiskAnalyzer.UI;
 
@@ -11,6 +12,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        LocalizationService.Instance.ApplyTo(Resources);
 
         AppDomain.CurrentDomain.UnhandledException += (s, args) =>
         {
@@ -46,9 +48,11 @@ public partial class App : Application
             string logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{context}]{Environment.NewLine}{ex}{Environment.NewLine}{new string('-', 60)}{Environment.NewLine}";
             File.AppendAllText(logFile, logMessage);
 
+            LocalizationService localization = LocalizationService.Instance;
+
             MessageBox.Show(
-                $"An unexpected error occurred:\n\n{ex.Message}\n\nDetails have been logged to:\n{logFile}",
-                "DiskAnalyzer Error",
+                localization.Format("UnexpectedErrorMessage", ex.Message, logFile),
+                localization.Get("UnexpectedErrorTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }

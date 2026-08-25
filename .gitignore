@@ -3,6 +3,7 @@
 [Oo]bj/
 DiskAnalyzer_Portable_win-x64/
 SetupOutput/
+publish/
 /DiskAnalyzer.exe
 /DiskAnalyzer.dll
 /DiskAnalyzer.pdb

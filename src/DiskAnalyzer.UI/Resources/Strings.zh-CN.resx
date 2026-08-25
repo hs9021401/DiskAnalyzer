@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="WindowTitle" xml:space="preserve"><value>DiskAnalyzer - 超高速磁盘空间可视化工具</value></data>
+  <data name="MenuOpen" xml:space="preserve"><value>打开</value></data>
+  <data name="MenuRevealInExplorer" xml:space="preserve"><value>在文件资源管理器中显示</value></data>
+  <data name="MenuCopyFullPath" xml:space="preserve"><value>复制完整路径</value></data>
+  <data name="MenuCopyAllDetails" xml:space="preserve"><value>复制所有详细信息</value></data>
+  <data name="MenuOpenCommandPromptHere" xml:space="preserve"><value>在此处打开命令提示符</value></data>
+  <data name="MenuOpenPowerShellHere" xml:space="preserve"><value>在此处打开 PowerShell</value></data>
+  <data name="MenuZoomIntoFolder" xml:space="preserve"><value>在矩形树状图中缩放至文件夹</value></data>
+  <data name="MenuToggleHeatmap" xml:space="preserve"><value>切换热力图</value></data>
+  <data name="MenuDeleteToRecycleBin" xml:space="preserve"><value>移至回收站</value></data>
+  <data name="MenuPermanentlyDelete" xml:space="preserve"><value>永久删除...</value></data>
+  <data name="MenuProperties" xml:space="preserve"><value>属性</value></data>
+  <data name="BrandSubtitle" xml:space="preserve"><value>超高速 NTFS MFT 引擎</value></data>
+  <data name="BrowseButton" xml:space="preserve"><value>📂 浏览...</value></data>
+  <data name="BrowseTooltip" xml:space="preserve"><value>选择要分析的自定义文件夹</value></data>
+  <data name="ScanButton" xml:space="preserve"><value>▶ 扫描</value></data>
+  <data name="ScanTooltip" xml:space="preserve"><value>开始快速磁盘扫描</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>⏹ 取消</value></data>
+  <data name="CancelTooltip" xml:space="preserve"><value>停止当前扫描</value></data>
+  <data name="ClearSearchTooltip" xml:space="preserve"><value>清除搜索筛选</value></data>
+  <data name="AdminBadge" xml:space="preserve"><value>管理员（MFT 直接模式）</value></data>
+  <data name="RestartAdminButton" xml:space="preserve"><value>⚡ 以管理员身份重启</value></data>
+  <data name="RestartAdminTooltip" xml:space="preserve"><value>以管理员权限重新启动，可让 NTFS MFT 扫描速度提升 100 倍</value></data>
+  <data name="HeatmapHideButton" xml:space="preserve"><value>🗺️ 隐藏热力图</value></data>
+  <data name="HeatmapShowButton" xml:space="preserve"><value>🗺️ 显示热力图</value></data>
+  <data name="HeatmapTooltip" xml:space="preserve"><value>显示或隐藏热力图面板（隐藏后可降低内存和 CPU 使用量）</value></data>
+  <data name="ExportCsvButton" xml:space="preserve"><value>📥 导出 CSV</value></data>
+  <data name="ExportCsvTooltip" xml:space="preserve"><value>将树状结构导出为标准 CSV 格式</value></data>
+  <data name="CopyInfoButton" xml:space="preserve"><value>📋 复制信息</value></data>
+  <data name="CopyInfoTooltip" xml:space="preserve"><value>将选中项目的信息复制到剪贴板</value></data>
+  <data name="LanguageMenu" xml:space="preserve"><value>语言</value></data>
+  <data name="LanguageSystemDefault" xml:space="preserve"><value>系统默认</value></data>
+  <data name="TreeViewTab" xml:space="preserve"><value>🌲 树状视图</value></data>
+  <data name="TreeNameHeader" xml:space="preserve"><value>名称</value></data>
+  <data name="TreeParentPercentHeader" xml:space="preserve"><value>占父级比例</value></data>
+  <data name="SizeHeader" xml:space="preserve"><value>大小</value></data>
+  <data name="AllocatedHeader" xml:space="preserve"><value>实际占用</value></data>
+  <data name="FilesHeader" xml:space="preserve"><value>文件</value></data>
+  <data name="FoldersHeader" xml:space="preserve"><value>文件夹</value></data>
+  <data name="TotalPercentHeader" xml:space="preserve"><value>占总量比例</value></data>
+  <data name="LastModifiedHeader" xml:space="preserve"><value>最后修改</value></data>
+  <data name="AttributesHeader" xml:space="preserve"><value>属性</value></data>
+  <data name="FileViewTab" xml:space="preserve"><value>📄 文件视图（最大文件）</value></data>
+  <data name="FileNameHeader" xml:space="preserve"><value>文件名</value></data>
+  <data name="FolderHeader" xml:space="preserve"><value>文件夹</value></data>
+  <data name="ExtensionShortHeader" xml:space="preserve"><value>扩展名</value></data>
+  <data name="DateModifiedHeader" xml:space="preserve"><value>修改日期</value></data>
+  <data name="FileTypesTab" xml:space="preserve"><value>📊 文件类型（分析）</value></data>
+  <data name="TotalSizeHeader" xml:space="preserve"><value>总大小</value></data>
+  <data name="PercentOfTotalHeader" xml:space="preserve"><value>占总量比例</value></data>
+  <data name="FileCountHeader" xml:space="preserve"><value>文件数量</value></data>
+  <data name="AllocatedSizeHeader" xml:space="preserve"><value>实际占用大小</value></data>
+  <data name="RootButton" xml:space="preserve"><value>🏠 根目录</value></data>
+  <data name="RootTooltip" xml:space="preserve"><value>将矩形树状图缩放重置到根目录</value></data>
+  <data name="UpButton" xml:space="preserve"><value>⬆ 上一级</value></data>
+  <data name="UpTooltip" xml:space="preserve"><value>缩小到上级文件夹</value></data>
+  <data name="ActiveFormat" xml:space="preserve"><value>当前：{0}</value></data>
+  <data name="SelectedFormat" xml:space="preserve"><value>已选择：{0}</value></data>
+  <data name="SelectedSizeFormat" xml:space="preserve"><value>（{0}）</value></data>
+  <data name="StatusReady" xml:space="preserve"><value>准备扫描。请选择磁盘或浏览文件夹。</value></data>
+  <data name="InvalidPathTitle" xml:space="preserve"><value>路径无效</value></data>
+  <data name="InvalidPathMessage" xml:space="preserve"><value>无法访问路径“{0}”，或该路径不存在。</value></data>
+  <data name="ScanningPathStatus" xml:space="preserve"><value>正在扫描“{0}”...</value></data>
+  <data name="InitializingStatus" xml:space="preserve"><value>正在初始化...</value></data>
+  <data name="ScanningFolderStatus" xml:space="preserve"><value>正在扫描：{0}</value></data>
+  <data name="ScanMetricsFormat" xml:space="preserve"><value>{0} 个文件、{1} 个文件夹（{2}）- {3}</value></data>
+  <data name="ScanCompletedStatus" xml:space="preserve"><value>扫描完成，用时 {0} 秒（{1} 个文件、{2} 个文件夹、{3}）</value></data>
+  <data name="ScanCompletedMetrics" xml:space="preserve"><value>{0} 个文件/秒 - 总计 {1}</value></data>
+  <data name="ScanCanceledStatus" xml:space="preserve"><value>扫描已取消，用时 {0} 秒。</value></data>
+  <data name="CanceledMetrics" xml:space="preserve"><value>已取消</value></data>
+  <data name="ScanErrorStatus" xml:space="preserve"><value>扫描错误：{0}</value></data>
+  <data name="ErrorMetrics" xml:space="preserve"><value>错误</value></data>
+  <data name="ScanErrorTitle" xml:space="preserve"><value>扫描错误</value></data>
+  <data name="ScanErrorMessage" xml:space="preserve"><value>扫描“{0}”失败：&#xA;&#xA;{1}</value></data>
+  <data name="CancelingStatus" xml:space="preserve"><value>正在取消扫描...</value></data>
+  <data name="SelectFolderDialogTitle" xml:space="preserve"><value>选择要扫描的文件夹</value></data>
+  <data name="ElevationTitle" xml:space="preserve"><value>需要提升权限</value></data>
+  <data name="ElevationMessage" xml:space="preserve"><value>无法提升应用程序权限：&#xA;{0}</value></data>
+  <data name="ExportCsvFilter" xml:space="preserve"><value>CSV 文件 (*.csv)|*.csv|所有文件 (*.*)|*.*</value></data>
+  <data name="ExportDialogTitle" xml:space="preserve"><value>将磁盘分析导出为 CSV</value></data>
+  <data name="ExportingStatus" xml:space="preserve"><value>正在导出 CSV...</value></data>
+  <data name="ExportedStatus" xml:space="preserve"><value>已成功导出到 {0}</value></data>
+  <data name="ExportCompleteTitle" xml:space="preserve"><value>导出完成</value></data>
+  <data name="ExportCompleteMessage" xml:space="preserve"><value>导出文件已保存到：&#xA;{0}</value></data>
+  <data name="ExportErrorStatus" xml:space="preserve"><value>导出错误：{0}</value></data>
+  <data name="ExportFailedTitle" xml:space="preserve"><value>导出失败</value></data>
+  <data name="ExportFailedMessage" xml:space="preserve"><value>导出 CSV 失败：&#xA;{0}</value></data>
+  <data name="CopiedPathStatus" xml:space="preserve"><value>已将路径复制到剪贴板：{0}</value></data>
+  <data name="CopiedPathsStatus" xml:space="preserve"><value>已将 {0} 个路径复制到剪贴板。</value></data>
+  <data name="CopiedDetailsStatus" xml:space="preserve"><value>已将 {0} 的详细信息复制到剪贴板。</value></data>
+  <data name="CopiedDetailsManyStatus" xml:space="preserve"><value>已将 {0} 个项目的详细信息复制到剪贴板。</value></data>
+  <data name="CopyFailedStatus" xml:space="preserve"><value>复制失败：{0}</value></data>
+  <data name="OpenFailedTitle" xml:space="preserve"><value>打开失败</value></data>
+  <data name="OpenFileFailedMessage" xml:space="preserve"><value>无法打开“{0}”。</value></data>
+  <data name="OpenFolderFailedMessage" xml:space="preserve"><value>无法在文件资源管理器中打开“{0}”。</value></data>
+  <data name="ConfirmDeleteTitle" xml:space="preserve"><value>确认删除</value></data>
+  <data name="ConfirmDeleteSingle" xml:space="preserve"><value>确定要将“{0}”移至回收站吗？</value></data>
+  <data name="ConfirmDeleteMany" xml:space="preserve"><value>确定要将选中的 {0} 个项目移至回收站吗？</value></data>
+  <data name="MovedToRecycleBinStatus" xml:space="preserve"><value>已将“{0}”移至回收站。</value></data>
+  <data name="MovedItemsToRecycleBinStatus" xml:space="preserve"><value>已将 {0} 个项目移至回收站。</value></data>
+  <data name="DeleteFailedTitle" xml:space="preserve"><value>删除失败</value></data>
+  <data name="DeleteFailedMessage" xml:space="preserve"><value>无法将项目移至回收站。</value></data>
+  <data name="ConfirmPermanentDeleteTitle" xml:space="preserve"><value>确认永久删除</value></data>
+  <data name="ConfirmPermanentDeleteSingle" xml:space="preserve"><value>警告：确定要永久删除：&#xA;“{0}”吗？&#xA;&#xA;此操作无法撤销！</value></data>
+  <data name="ConfirmPermanentDeleteMany" xml:space="preserve"><value>警告：确定要永久删除选中的 {0} 个项目吗？&#xA;&#xA;此操作无法撤销！</value></data>
+  <data name="PermanentlyDeletedStatus" xml:space="preserve"><value>已永久删除“{0}”。</value></data>
+  <data name="PermanentlyDeletedItemsStatus" xml:space="preserve"><value>已永久删除 {0} 个项目。</value></data>
+  <data name="PermanentDeleteFailedTitle" xml:space="preserve"><value>删除失败</value></data>
+  <data name="PermanentDeleteFailedMessage" xml:space="preserve"><value>无法永久删除项目。</value></data>
+  <data name="ProgressInitializing" xml:space="preserve"><value>正在初始化扫描...</value></data>
+  <data name="ProgressReadingMft" xml:space="preserve"><value>正在读取 NTFS MFT 记录（{0} 个文件、{1} 个文件夹）...</value></data>
+  <data name="ProgressReadingUsn" xml:space="preserve"><value>正在读取 USN Change Journal（{0} 个项目）...</value></data>
+  <data name="ProgressScanningFolder" xml:space="preserve"><value>正在扫描：{0}</value></data>
+  <data name="ProgressBuildingTree" xml:space="preserve"><value>正在建立目录层次...</value></data>
+  <data name="ProgressCalculatingSizes" xml:space="preserve"><value>正在汇总文件夹大小和文件数量...</value></data>
+  <data name="ProgressSorting" xml:space="preserve"><value>正在排序树状项目...</value></data>
+  <data name="ProgressComplete" xml:space="preserve"><value>扫描完成，用时 {0} 秒（{1} 个文件、{2} 个文件夹）</value></data>
+  <data name="ProgressCancelled" xml:space="preserve"><value>扫描已取消。</value></data>
+  <data name="ProgressError" xml:space="preserve"><value>扫描发生错误。</value></data>
+  <data name="ProgressScanning" xml:space="preserve"><value>正在扫描...</value></data>
+  <data name="NoExtensionLabel" xml:space="preserve"><value>[无扩展名]</value></data>
+  <data name="FolderAnalysisTitle" xml:space="preserve"><value>文件夹分析：{0}</value></data>
+  <data name="CustomFolderLabel" xml:space="preserve"><value>自定义文件夹</value></data>
+  <data name="ScanningActiveTarget" xml:space="preserve"><value>正在扫描当前目标</value></data>
+  <data name="NoDriveSelected" xml:space="preserve"><value>未选择磁盘</value></data>
+  <data name="TotalFormat" xml:space="preserve"><value>总计：{0}</value></data>
+  <data name="UsedFormat" xml:space="preserve"><value>已用：{0}（{1}%）</value></data>
+  <data name="FreeFormat" xml:space="preserve"><value>可用：{0}（{1}%）</value></data>
+  <data name="LocalDiskLabel" xml:space="preserve"><value>本地磁盘</value></data>
+  <data name="TreemapSizeFormat" xml:space="preserve"><value>大小：{0}（{1} 字节）</value></data>
+  <data name="TreemapAllocatedFormat" xml:space="preserve"><value>已分配：{0}（{1} 字节）</value></data>
+  <data name="TreemapParentPercentFormat" xml:space="preserve"><value>父级占比：{0}%</value></data>
+  <data name="TreemapFilesFoldersFormat" xml:space="preserve"><value>文件／文件夹：{0} 个文件，{1} 个文件夹</value></data>
+  <data name="TreemapFilesFoldersValueFormat" xml:space="preserve"><value>{0} 个文件，{1} 个文件夹</value></data>
+  <data name="TreemapModifiedFormat" xml:space="preserve"><value>修改时间：{0}</value></data>
+  <data name="TreemapTypeFormat" xml:space="preserve"><value>类型：{0}</value></data>
+  <data name="FullPathLabel" xml:space="preserve"><value>完整路径</value></data>
+  <data name="BytesLabel" xml:space="preserve"><value>字节</value></data>
+  <data name="UnexpectedErrorTitle" xml:space="preserve"><value>DiskAnalyzer 错误</value></data>
+  <data name="UnexpectedErrorMessage" xml:space="preserve"><value>发生未预期的错误：&#xA;&#xA;{0}&#xA;&#xA;详细信息已记录至：&#xA;{1}</value></data>
+  <data name="NoTreemapDataMessage" xml:space="preserve"><value>暂无树状矩形图数据。请选择磁盘并点击扫描。</value></data>
+</root>

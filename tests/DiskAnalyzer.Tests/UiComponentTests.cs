@@ -6,11 +6,13 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using DiskAnalyzer.Core.Models;
 using DiskAnalyzer.Core.Scanning;
 using DiskAnalyzer.UI;
 using DiskAnalyzer.UI.Helpers;
+using DiskAnalyzer.UI.Localization;
 using DiskAnalyzer.UI.ViewModels;
 using Xunit;
 
@@ -224,18 +226,60 @@ public class UiComponentTests
     [Fact]
     public void MainViewModel_ShowTreemap_Toggle_WorksCorrectly()
     {
-        var vm = new MainViewModel();
+        var localization = new LocalizationService();
+        localization.SetLanguage("en-US", persist: false);
+        var vm = new MainViewModel(localization);
 
         Assert.True(vm.ShowTreemap);
-        Assert.Equal("🗺️ 隱藏熱力圖", vm.TreemapToggleText);
+        Assert.Equal("🗺️ Hide Heatmap", vm.TreemapToggleText);
 
         vm.ToggleTreemapCommand.Execute(null);
         Assert.False(vm.ShowTreemap);
-        Assert.Equal("🗺️ 顯示熱力圖", vm.TreemapToggleText);
+        Assert.Equal("🗺️ Show Heatmap", vm.TreemapToggleText);
 
         vm.ToggleTreemapCommand.Execute(null);
         Assert.True(vm.ShowTreemap);
-        Assert.Equal("🗺️ 隱藏熱力圖", vm.TreemapToggleText);
+        Assert.Equal("🗺️ Hide Heatmap", vm.TreemapToggleText);
+    }
+
+    [Fact]
+    public void LocalizationService_LoadsAllSupportedLanguages()
+    {
+        var localization = new LocalizationService();
+
+        Assert.Equal(8, localization.Languages.Count);
+        Assert.Contains(localization.Languages, language => language.CultureName == "zh-TW");
+        Assert.Contains(localization.Languages, language => language.CultureName == "es-ES");
+        Assert.Contains(localization.Languages, language => language.CultureName == "fr-FR");
+
+        localization.SetLanguage("zh-TW", persist: false);
+        Assert.Equal("🗺️ 隱藏熱力圖", localization.Get("HeatmapHideButton"));
+        Assert.Equal("語言", localization.Get("LanguageMenu"));
+
+        localization.SetLanguage("fr-FR", persist: false);
+        Assert.Contains("Masquer", localization.Get("HeatmapHideButton"));
+
+        foreach (var language in localization.Languages.Where(language => language.CultureName != "auto"))
+        {
+            localization.SetLanguage(language.CultureName, persist: false);
+            Assert.All(localization.Keys, key => Assert.NotEqual(key, localization.Get(key)));
+        }
+    }
+
+    [Fact]
+    public void MainViewModel_LanguageSwitch_UpdatesDynamicText()
+    {
+        var localization = new LocalizationService();
+        localization.SetLanguage("en-US", persist: false);
+        var vm = new MainViewModel(localization);
+
+        Assert.Equal("🗺️ Hide Heatmap", vm.TreemapToggleText);
+
+        localization.SetLanguage("zh-CN", persist: false);
+        Assert.Equal("🗺️ 隐藏热力图", vm.TreemapToggleText);
+
+        vm.ToggleTreemapCommand.Execute(null);
+        Assert.Equal("🗺️ 显示热力图", vm.TreemapToggleText);
     }
 
     [Fact]
@@ -329,7 +373,69 @@ public class UiComponentTests
             throw new Exception($"STA Thread failed: {threadEx}", threadEx);
         }
     }
+
+    [Fact]
+    public void MainWindow_LanguageMenu_OpensAndShowsChoices()
+    {
+        Exception? threadEx = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                if (Application.Current == null)
+                {
+                    _ = new Application();
+                }
+
+                var uri = new Uri("/DiskAnalyzer;component/Themes/DarkTheme.xaml", UriKind.Relative);
+                var dict = (ResourceDictionary)Application.LoadComponent(uri);
+                Application.Current.Resources.MergedDictionaries.Add(dict);
+
+                var window = new MainWindow();
+                window.Show();
+                window.UpdateLayout();
+
+                var languageButton = FindVisualChildren<Button>(window)
+                    .Single(button => button.ContextMenu != null);
+
+                languageButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+
+                Assert.NotNull(languageButton.ContextMenu);
+                Assert.True(languageButton.ContextMenu.IsOpen);
+                Assert.Equal(8, languageButton.ContextMenu.Items.Count);
+
+                window.Close();
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.InvokeShutdown();
+            }
+            catch (Exception ex)
+            {
+                threadEx = ex;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join(5000);
+
+        if (threadEx != null)
+        {
+            throw new Exception($"Language menu regression test failed: {threadEx}", threadEx);
+        }
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root)
+        where T : DependencyObject
+    {
+        if (root == null)
+            yield break;
+
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match)
+                yield return match;
+
+            foreach (T descendant in FindVisualChildren<T>(child))
+                yield return descendant;
+        }
+    }
 }
-
-
-

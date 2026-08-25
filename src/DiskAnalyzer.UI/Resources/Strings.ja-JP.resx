@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="WindowTitle" xml:space="preserve"><value>DiskAnalyzer - 超高速ディスク容量ビジュアライザー</value></data>
+  <data name="MenuOpen" xml:space="preserve"><value>開く</value></data>
+  <data name="MenuRevealInExplorer" xml:space="preserve"><value>エクスプローラーで表示</value></data>
+  <data name="MenuCopyFullPath" xml:space="preserve"><value>フルパスをコピー</value></data>
+  <data name="MenuCopyAllDetails" xml:space="preserve"><value>すべての詳細をコピー</value></data>
+  <data name="MenuOpenCommandPromptHere" xml:space="preserve"><value>ここでコマンド プロンプトを開く</value></data>
+  <data name="MenuOpenPowerShellHere" xml:space="preserve"><value>ここで PowerShell を開く</value></data>
+  <data name="MenuZoomIntoFolder" xml:space="preserve"><value>ツリーマップでフォルダーにズーム</value></data>
+  <data name="MenuToggleHeatmap" xml:space="preserve"><value>ヒートマップを切り替え</value></data>
+  <data name="MenuDeleteToRecycleBin" xml:space="preserve"><value>ごみ箱に削除</value></data>
+  <data name="MenuPermanentlyDelete" xml:space="preserve"><value>完全に削除...</value></data>
+  <data name="MenuProperties" xml:space="preserve"><value>プロパティ</value></data>
+  <data name="BrandSubtitle" xml:space="preserve"><value>超高速 NTFS MFT エンジン</value></data>
+  <data name="BrowseButton" xml:space="preserve"><value>📂 参照...</value></data>
+  <data name="BrowseTooltip" xml:space="preserve"><value>解析するカスタムフォルダーを選択</value></data>
+  <data name="ScanButton" xml:space="preserve"><value>▶ スキャン</value></data>
+  <data name="ScanTooltip" xml:space="preserve"><value>高速ディスクスキャンを開始</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>⏹ キャンセル</value></data>
+  <data name="CancelTooltip" xml:space="preserve"><value>現在のスキャンを停止</value></data>
+  <data name="ClearSearchTooltip" xml:space="preserve"><value>検索フィルターをクリア</value></data>
+  <data name="AdminBadge" xml:space="preserve"><value>管理者（MFT 直接モード）</value></data>
+  <data name="RestartAdminButton" xml:space="preserve"><value>⚡ 管理者として再起動</value></data>
+  <data name="RestartAdminTooltip" xml:space="preserve"><value>管理者権限で再起動すると NTFS MFT スキャンが最大 100 倍高速になります</value></data>
+  <data name="HeatmapHideButton" xml:space="preserve"><value>🗺️ ヒートマップを非表示</value></data>
+  <data name="HeatmapShowButton" xml:space="preserve"><value>🗺️ ヒートマップを表示</value></data>
+  <data name="HeatmapTooltip" xml:space="preserve"><value>ヒートマップパネルを表示または非表示（非表示にするとメモリと CPU 使用量を削減できます）</value></data>
+  <data name="ExportCsvButton" xml:space="preserve"><value>📥 CSV をエクスポート</value></data>
+  <data name="ExportCsvTooltip" xml:space="preserve"><value>ツリーを標準 CSV 形式でエクスポート</value></data>
+  <data name="CopyInfoButton" xml:space="preserve"><value>📋 情報をコピー</value></data>
+  <data name="CopyInfoTooltip" xml:space="preserve"><value>選択した項目の情報をクリップボードにコピー</value></data>
+  <data name="LanguageMenu" xml:space="preserve"><value>言語</value></data>
+  <data name="LanguageSystemDefault" xml:space="preserve"><value>システムの既定値</value></data>
+  <data name="TreeViewTab" xml:space="preserve"><value>🌲 ツリービュー</value></data>
+  <data name="TreeNameHeader" xml:space="preserve"><value>名前</value></data>
+  <data name="TreeParentPercentHeader" xml:space="preserve"><value>親に対する割合</value></data>
+  <data name="SizeHeader" xml:space="preserve"><value>サイズ</value></data>
+  <data name="AllocatedHeader" xml:space="preserve"><value>割り当て済み</value></data>
+  <data name="FilesHeader" xml:space="preserve"><value>ファイル</value></data>
+  <data name="FoldersHeader" xml:space="preserve"><value>フォルダー</value></data>
+  <data name="TotalPercentHeader" xml:space="preserve"><value>合計の割合</value></data>
+  <data name="LastModifiedHeader" xml:space="preserve"><value>最終更新</value></data>
+  <data name="AttributesHeader" xml:space="preserve"><value>属性</value></data>
+  <data name="FileViewTab" xml:space="preserve"><value>📄 ファイルビュー（最大ファイル）</value></data>
+  <data name="FileNameHeader" xml:space="preserve"><value>ファイル名</value></data>
+  <data name="FolderHeader" xml:space="preserve"><value>フォルダー</value></data>
+  <data name="ExtensionShortHeader" xml:space="preserve"><value>拡張子</value></data>
+  <data name="DateModifiedHeader" xml:space="preserve"><value>更新日時</value></data>
+  <data name="FileTypesTab" xml:space="preserve"><value>📊 ファイルの種類（内訳）</value></data>
+  <data name="TotalSizeHeader" xml:space="preserve"><value>合計サイズ</value></data>
+  <data name="PercentOfTotalHeader" xml:space="preserve"><value>全体の割合</value></data>
+  <data name="FileCountHeader" xml:space="preserve"><value>ファイル数</value></data>
+  <data name="AllocatedSizeHeader" xml:space="preserve"><value>割り当てサイズ</value></data>
+  <data name="RootButton" xml:space="preserve"><value>🏠 ルート</value></data>
+  <data name="RootTooltip" xml:space="preserve"><value>ツリーマップのズームをルートに戻す</value></data>
+  <data name="UpButton" xml:space="preserve"><value>⬆ 上へ</value></data>
+  <data name="UpTooltip" xml:space="preserve"><value>親フォルダーにズームアウト</value></data>
+  <data name="ActiveFormat" xml:space="preserve"><value>アクティブ: {0}</value></data>
+  <data name="SelectedFormat" xml:space="preserve"><value>選択済み: {0}</value></data>
+  <data name="SelectedSizeFormat" xml:space="preserve"><value>（{0}）</value></data>
+  <data name="StatusReady" xml:space="preserve"><value>スキャンの準備ができました。ドライブを選択するか、フォルダーを参照してください。</value></data>
+  <data name="InvalidPathTitle" xml:space="preserve"><value>無効なパス</value></data>
+  <data name="InvalidPathMessage" xml:space="preserve"><value>パス「{0}」にアクセスできないか、存在しません。</value></data>
+  <data name="ScanningPathStatus" xml:space="preserve"><value>「{0}」をスキャン中...</value></data>
+  <data name="InitializingStatus" xml:space="preserve"><value>初期化中...</value></data>
+  <data name="ScanningFolderStatus" xml:space="preserve"><value>スキャン中: {0}</value></data>
+  <data name="ScanMetricsFormat" xml:space="preserve"><value>{0} ファイル、{1} フォルダー（{2}）- {3}</value></data>
+  <data name="ScanCompletedStatus" xml:space="preserve"><value>スキャン完了（{0} 秒、{1} ファイル、{2} フォルダー、{3}）</value></data>
+  <data name="ScanCompletedMetrics" xml:space="preserve"><value>{0} ファイル/秒 - 合計 {1}</value></data>
+  <data name="ScanCanceledStatus" xml:space="preserve"><value>スキャンをキャンセルしました（{0} 秒）。</value></data>
+  <data name="CanceledMetrics" xml:space="preserve"><value>キャンセル済み</value></data>
+  <data name="ScanErrorStatus" xml:space="preserve"><value>スキャンエラー: {0}</value></data>
+  <data name="ErrorMetrics" xml:space="preserve"><value>エラー</value></data>
+  <data name="ScanErrorTitle" xml:space="preserve"><value>スキャンエラー</value></data>
+  <data name="ScanErrorMessage" xml:space="preserve"><value>「{0}」のスキャンに失敗しました:&#xA;&#xA;{1}</value></data>
+  <data name="CancelingStatus" xml:space="preserve"><value>スキャンをキャンセル中...</value></data>
+  <data name="SelectFolderDialogTitle" xml:space="preserve"><value>スキャンするフォルダーを選択</value></data>
+  <data name="ElevationTitle" xml:space="preserve"><value>昇格が必要です</value></data>
+  <data name="ElevationMessage" xml:space="preserve"><value>アプリケーションの権限を昇格できませんでした:&#xA;{0}</value></data>
+  <data name="ExportCsvFilter" xml:space="preserve"><value>CSV ファイル (*.csv)|*.csv|すべてのファイル (*.*)|*.*</value></data>
+  <data name="ExportDialogTitle" xml:space="preserve"><value>ディスク分析を CSV にエクスポート</value></data>
+  <data name="ExportingStatus" xml:space="preserve"><value>CSV にエクスポート中...</value></data>
+  <data name="ExportedStatus" xml:space="preserve"><value>{0} に正常にエクスポートしました</value></data>
+  <data name="ExportCompleteTitle" xml:space="preserve"><value>エクスポート完了</value></data>
+  <data name="ExportCompleteMessage" xml:space="preserve"><value>エクスポートしたファイルを次に保存しました:&#xA;{0}</value></data>
+  <data name="ExportErrorStatus" xml:space="preserve"><value>エクスポートエラー: {0}</value></data>
+  <data name="ExportFailedTitle" xml:space="preserve"><value>エクスポートに失敗</value></data>
+  <data name="ExportFailedMessage" xml:space="preserve"><value>CSV のエクスポートに失敗しました:&#xA;{0}</value></data>
+  <data name="CopiedPathStatus" xml:space="preserve"><value>パスをクリップボードにコピーしました: {0}</value></data>
+  <data name="CopiedPathsStatus" xml:space="preserve"><value>{0} 個のパスをクリップボードにコピーしました。</value></data>
+  <data name="CopiedDetailsStatus" xml:space="preserve"><value>{0} の詳細をクリップボードにコピーしました。</value></data>
+  <data name="CopiedDetailsManyStatus" xml:space="preserve"><value>{0} 個の項目の詳細をクリップボードにコピーしました。</value></data>
+  <data name="CopyFailedStatus" xml:space="preserve"><value>コピーに失敗しました: {0}</value></data>
+  <data name="OpenFailedTitle" xml:space="preserve"><value>開くのに失敗</value></data>
+  <data name="OpenFileFailedMessage" xml:space="preserve"><value>「{0}」を開けませんでした。</value></data>
+  <data name="OpenFolderFailedMessage" xml:space="preserve"><value>エクスプローラーで「{0}」を開けませんでした。</value></data>
+  <data name="ConfirmDeleteTitle" xml:space="preserve"><value>削除の確認</value></data>
+  <data name="ConfirmDeleteSingle" xml:space="preserve"><value>「{0}」をごみ箱に移動しますか？</value></data>
+  <data name="ConfirmDeleteMany" xml:space="preserve"><value>選択した {0} 個の項目をごみ箱に移動しますか？</value></data>
+  <data name="MovedToRecycleBinStatus" xml:space="preserve"><value>「{0}」をごみ箱に移動しました。</value></data>
+  <data name="MovedItemsToRecycleBinStatus" xml:space="preserve"><value>{0} 個の項目をごみ箱に移動しました。</value></data>
+  <data name="DeleteFailedTitle" xml:space="preserve"><value>削除に失敗</value></data>
+  <data name="DeleteFailedMessage" xml:space="preserve"><value>項目をごみ箱に移動できませんでした。</value></data>
+  <data name="ConfirmPermanentDeleteTitle" xml:space="preserve"><value>完全削除の確認</value></data>
+  <data name="ConfirmPermanentDeleteSingle" xml:space="preserve"><value>警告: 次を完全に削除しますか？&#xA;「{0}」&#xA;&#xA;この操作は元に戻せません。</value></data>
+  <data name="ConfirmPermanentDeleteMany" xml:space="preserve"><value>警告: 選択した {0} 個の項目を完全に削除しますか？&#xA;&#xA;この操作は元に戻せません。</value></data>
+  <data name="PermanentlyDeletedStatus" xml:space="preserve"><value>「{0}」を完全に削除しました。</value></data>
+  <data name="PermanentlyDeletedItemsStatus" xml:space="preserve"><value>{0} 個の項目を完全に削除しました。</value></data>
+  <data name="PermanentDeleteFailedTitle" xml:space="preserve"><value>削除に失敗</value></data>
+  <data name="PermanentDeleteFailedMessage" xml:space="preserve"><value>項目を完全に削除できませんでした。</value></data>
+  <data name="ProgressInitializing" xml:space="preserve"><value>スキャンを初期化中...</value></data>
+  <data name="ProgressReadingMft" xml:space="preserve"><value>NTFS MFT レコードを読み取り中（{0} ファイル、{1} フォルダー）...</value></data>
+  <data name="ProgressReadingUsn" xml:space="preserve"><value>USN Change Journal を読み取り中（{0} 項目）...</value></data>
+  <data name="ProgressScanningFolder" xml:space="preserve"><value>スキャン中: {0}</value></data>
+  <data name="ProgressBuildingTree" xml:space="preserve"><value>ディレクトリ階層を構築中...</value></data>
+  <data name="ProgressCalculatingSizes" xml:space="preserve"><value>フォルダーサイズとファイル数を集計中...</value></data>
+  <data name="ProgressSorting" xml:space="preserve"><value>ツリー項目を並べ替え中...</value></data>
+  <data name="ProgressComplete" xml:space="preserve"><value>スキャン完了（{0} 秒、{1} ファイル、{2} フォルダー）</value></data>
+  <data name="ProgressCancelled" xml:space="preserve"><value>スキャンをキャンセルしました。</value></data>
+  <data name="ProgressError" xml:space="preserve"><value>スキャンでエラーが発生しました。</value></data>
+  <data name="ProgressScanning" xml:space="preserve"><value>スキャン中...</value></data>
+  <data name="NoExtensionLabel" xml:space="preserve"><value>[拡張子なし]</value></data>
+  <data name="FolderAnalysisTitle" xml:space="preserve"><value>フォルダー分析: {0}</value></data>
+  <data name="CustomFolderLabel" xml:space="preserve"><value>カスタムフォルダー</value></data>
+  <data name="ScanningActiveTarget" xml:space="preserve"><value>現在の対象をスキャン中</value></data>
+  <data name="NoDriveSelected" xml:space="preserve"><value>ドライブ未選択</value></data>
+  <data name="TotalFormat" xml:space="preserve"><value>合計: {0}</value></data>
+  <data name="UsedFormat" xml:space="preserve"><value>使用済み: {0} ({1}%)</value></data>
+  <data name="FreeFormat" xml:space="preserve"><value>空き: {0} ({1}%)</value></data>
+  <data name="LocalDiskLabel" xml:space="preserve"><value>ローカルディスク</value></data>
+  <data name="TreemapSizeFormat" xml:space="preserve"><value>サイズ: {0} ({1} バイト)</value></data>
+  <data name="TreemapAllocatedFormat" xml:space="preserve"><value>割り当て済み: {0} ({1} バイト)</value></data>
+  <data name="TreemapParentPercentFormat" xml:space="preserve"><value>親に対する割合: {0}%</value></data>
+  <data name="TreemapFilesFoldersFormat" xml:space="preserve"><value>ファイル / フォルダー: ファイル {0} 個、フォルダー {1} 個</value></data>
+  <data name="TreemapFilesFoldersValueFormat" xml:space="preserve"><value>ファイル {0} 個、フォルダー {1} 個</value></data>
+  <data name="TreemapModifiedFormat" xml:space="preserve"><value>更新日時: {0}</value></data>
+  <data name="TreemapTypeFormat" xml:space="preserve"><value>種類: {0}</value></data>
+  <data name="FullPathLabel" xml:space="preserve"><value>完全なパス</value></data>
+  <data name="BytesLabel" xml:space="preserve"><value>バイト</value></data>
+  <data name="UnexpectedErrorTitle" xml:space="preserve"><value>DiskAnalyzer エラー</value></data>
+  <data name="UnexpectedErrorMessage" xml:space="preserve"><value>予期しないエラーが発生しました：&#xA;&#xA;{0}&#xA;&#xA;詳細は次に記録されています：&#xA;{1}</value></data>
+  <data name="NoTreemapDataMessage" xml:space="preserve"><value>ツリーマップ データがありません。ドライブを選択して「スキャン」をクリックしてください。</value></data>
+</root>

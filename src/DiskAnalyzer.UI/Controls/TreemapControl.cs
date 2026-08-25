@@ -10,6 +10,7 @@ using System.Windows.Shapes;
 using DiskAnalyzer.Core.Models;
 using DiskAnalyzer.Core.Treemap;
 using DiskAnalyzer.UI.Helpers;
+using DiskAnalyzer.UI.Localization;
 
 namespace DiskAnalyzer.UI;
 
@@ -19,6 +20,7 @@ public class TreemapControl : FrameworkElement
     private TreemapNode? _hoveredNode;
     private readonly ToolTip _richToolTip = new();
     private readonly Typeface _typeface = new("Segoe UI");
+    private readonly LocalizationService _localization = LocalizationService.Instance;
     private static readonly ConcurrentDictionary<string, (Brush Fill, Pen Border)> s_brushPenCache = new(StringComparer.OrdinalIgnoreCase);
 
     private static readonly Pen s_selectedPen;
@@ -64,6 +66,26 @@ public class TreemapControl : FrameworkElement
     {
         ClipToBounds = true;
         Focusable = true;
+
+        _localization.LanguageChanged += (_, _) =>
+        {
+            void RefreshToolTip()
+            {
+                if (_hoveredNode != null)
+                {
+                    UpdateToolTipContent(_hoveredNode.Item);
+                }
+            }
+
+            if (Dispatcher.CheckAccess())
+            {
+                RefreshToolTip();
+            }
+            else
+            {
+                _ = Dispatcher.InvokeAsync(RefreshToolTip);
+            }
+        };
 
         SetupRichToolTip();
         ToolTip = _richToolTip;
@@ -188,8 +210,8 @@ public class TreemapControl : FrameworkElement
         if (RootItem == null || _nodes.Count == 0)
         {
             var noDataText = new FormattedText(
-                "No treemap data available. Select a drive and click Scan.",
-                CultureInfo.CurrentCulture,
+                _localization.Get("NoTreemapDataMessage"),
+                _localization.CurrentCulture,
                 FlowDirection.LeftToRight,
                 _typeface,
                 14,
@@ -504,23 +526,36 @@ public class TreemapControl : FrameworkElement
             row++;
         }
 
-        AddStat("Size:", $"{item.SizeFormatted} ({item.Size:N0} bytes)");
-        AddStat("Allocated:", $"{item.AllocatedSizeFormatted} ({item.AllocatedSize:N0} bytes)");
+        AddStat(
+            _localization.Get("SizeHeader") + ":",
+            $"{item.SizeFormatted} ({item.Size.ToString("N0", _localization.CurrentCulture)} {_localization.Get("BytesLabel")})");
+        AddStat(
+            _localization.Get("AllocatedHeader") + ":",
+            $"{item.AllocatedSizeFormatted} ({item.AllocatedSize.ToString("N0", _localization.CurrentCulture)} {_localization.Get("BytesLabel")})");
         if (item.Percentage > 0)
         {
-            AddStat("% of Parent:", $"{item.Percentage:F1}%");
+            AddStat(
+                _localization.Get("TreeParentPercentHeader") + ":",
+                item.Percentage.ToString("F1", _localization.CurrentCulture) + "%");
         }
         if (item.IsDirectory)
         {
-            AddStat("Files / Folders:", $"{item.FileCount:N0} files, {item.FolderCount:N0} folders");
+            AddStat(
+                _localization.Get("FilesHeader") + " / " + _localization.Get("FoldersHeader") + ":",
+                _localization.Format(
+                    "TreemapFilesFoldersValueFormat",
+                    item.FileCount.ToString("N0", _localization.CurrentCulture),
+                    item.FolderCount.ToString("N0", _localization.CurrentCulture)));
         }
         if (item.LastModified.HasValue)
         {
-            AddStat("Modified:", item.LastModified.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            AddStat(
+                _localization.Get("LastModifiedHeader") + ":",
+                item.LastModified.Value.ToString("yyyy-MM-dd HH:mm:ss", _localization.CurrentCulture));
         }
         if (!string.IsNullOrEmpty(item.Extension))
         {
-            AddStat("Type:", item.Extension.ToUpperInvariant());
+            AddStat(string.Empty, _localization.Format("TreemapTypeFormat", item.Extension.ToUpperInvariant()));
         }
 
         Grid.SetRow(statsGrid, 3);
