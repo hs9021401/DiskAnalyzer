@@ -2,7 +2,7 @@
 
 > **A fast Windows disk space analyzer and visualizer**
 
-DiskAnalyzer is a Windows x64 disk space analyzer built with WPF and .NET 10. It builds a filesystem hierarchy using NTFS `$MFT`, the USN Change Journal, or a parallel Win32 directory walker, then presents the results through Tree View, File View, File Types, and an interactive Treemap.
+DiskAnalyzer is a Windows x64 disk space analyzer built with WPF and .NET 10. It builds a file and folder hierarchy, then helps you find large items through Tree View, File View, File Types, and an interactive Treemap.
 
 ## 🌐 Languages
 
@@ -10,32 +10,39 @@ DiskAnalyzer is a Windows x64 disk space analyzer built with WPF and .NET 10. It
 
 ## ✨ Features
 
-- **Fast scanning**: direct NTFS MFT/Data Runs when available, USN Journal enumeration, and a multithreaded Win32 fallback for folders, non-NTFS volumes, or non-admin sessions.
-- **Multiple views**: hierarchical Tree View, virtualized large-file File View, extension-based File Types summaries, and an interactive Treemap.
-- **Tree selection**: Ctrl/Shift multi-selection, context-menu batch actions, automatic first-level expansion after scanning, and double-click file opening.
+- **Fast scanning**: uses the NTFS `$MFT` and USN Change Journal when applicable, with a parallel Win32 scanner for folders, non-NTFS volumes, or restricted access.
+- **Multiple views**: browse folders in the hierarchical Tree View, find large files in File View, group usage by extension in File Types, or compare sizes visually with the Treemap.
+- **Tree operations**: Ctrl/Shift multi-selection, context-menu batch actions, automatic first-level expansion after scanning, and double-click file opening.
 - **Accurate accounting**: NTFS hard-link deduplication plus optional Free Space and Allocated/System Space virtual items.
-- **Windows Shell integration**: open files, reveal items in Explorer, copy paths/details, open CMD or PowerShell, move items to the Recycle Bin, permanently delete, and show Windows Properties.
-- **Export and localization**: standard CSV export and runtime language switching for English, Traditional Chinese, Simplified Chinese, Japanese, Korean, Spanish, and French.
+- **Windows integration**: open files, reveal them in Explorer, copy paths and details, open CMD/PowerShell, move items to the Recycle Bin, permanently delete them, and show Windows Properties.
+- **Export and localization**: standard CSV export and in-app switching between English, Traditional Chinese, Simplified Chinese, Japanese, Korean, Spanish, and French.
+
+## 🖱️ Basic usage
+
+1. Select a drive or folder and click **Scan**.
+2. Browse the hierarchy in Tree View, or switch to File View and File Types to locate targets.
+3. Use Ctrl/Shift to select multiple items, then use the context menu for batch actions.
+4. Double-click a file to open it with the Windows default application; use the context menu for additional file actions.
+5. Use the Treemap tooltips, zoom, and hierarchy navigation to locate large items quickly.
+
+Review the selected paths before moving or deleting files. Items permanently deleted cannot be restored from the Recycle Bin.
+
+## 📦 Download and installation
+
+### Portable build
+
+Download `DiskAnalyzer_Portable_win-x64.zip` from [GitHub Releases](https://github.com/hs9021401/DiskAnalyzer/releases), extract it, and run `DiskAnalyzer.exe`. The portable build requires no installation and includes the .NET runtime.
+
+### Inno Setup installer
+
+Run the installer from a Release and choose the installer language, an optional desktop shortcut, and optional Windows Explorer context-menu integration.
 
 ## 💻 Requirements
 
 - Windows 10, Windows 11, or a compatible Windows Server x64 system.
-- .NET 10 SDK to build from source. The self-contained portable build includes the runtime.
-- Administrator rights are optional, but may improve NTFS MFT access and scan coverage.
-
-## 📦 Installation and use
-
-### Portable build
-
-Download `DiskAnalyzer_Portable_win-x64.zip` from GitHub Releases, extract it, and run `DiskAnalyzer.exe`. The portable build does not require installation.
-
-### Inno Setup installer
-
-The installer provides language selection, an optional desktop shortcut, and optional Windows Explorer context-menu integration. It is generated from `DiskAnalyzer.iss` using the portable publish directory.
-
-### License and third-party notices
-
-Portable and installed builds include `LICENSE.txt` and `THIRD-PARTY-NOTICES.txt`. The first covers DiskAnalyzer's own code under the MIT License; the second lists attribution and license links for the self-contained .NET runtime and test dependencies.
+- The Portable and installed builds do not require a separate .NET installation.
+- The .NET 10 SDK is required to build from source.
+- Administrator rights are optional, but may improve NTFS scan access and coverage.
 
 ## 🔧 Build from source
 
@@ -47,7 +54,7 @@ dotnet build src/DiskAnalyzer.UI/DiskAnalyzer.UI.csproj -c Debug
 dotnet test tests/DiskAnalyzer.Tests/DiskAnalyzer.Tests.csproj --no-restore
 ```
 
-Create a self-contained single-file portable build:
+Create a self-contained single-file Portable build:
 
 ```powershell
 dotnet publish src/DiskAnalyzer.UI/DiskAnalyzer.UI.csproj `
@@ -57,29 +64,15 @@ dotnet publish src/DiskAnalyzer.UI/DiskAnalyzer.UI.csproj `
   -o ./publish
 ```
 
-## 🏗️ Project structure
-
-```text
-src/DiskAnalyzer.Core/       Models, scanners, MFT/USN readers, export, and search
-src/DiskAnalyzer.UI/         WPF application, ViewModels, controls, themes, and resources
-tests/DiskAnalyzer.Tests/    Core and UI component tests
-DiskAnalyzer.iss             Inno Setup installer script
-```
-
 ## ⚠️ Notes and limitations
 
-- This project targets Windows x64; Linux and macOS are not currently supported.
-- Protected or inaccessible directories may be skipped. Raw disk access can require administrator rights.
-- Scanning, deletion, and permanent deletion operate on user-selected files. Keep backups of important data.
-- The public API is not yet stable; library consumers should expect breaking changes during development.
+- DiskAnalyzer currently supports Windows x64 only; Linux and macOS are not supported.
+- Protected, offline, or inaccessible folders may be skipped.
+- Scanning, Recycle Bin, and deletion actions operate on the selected files. Keep backups of important data.
+- The public API is not yet stable; library consumers should expect changes between versions.
 
-## 🤝 Contributing
+## 📄 License and third-party notices
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening an issue or pull request. Include the Windows version, scan mode, reproduction steps, and relevant logs, while removing personal paths and sensitive data.
-For suspected vulnerabilities, please follow [SECURITY.md](SECURITY.md) instead of posting complete details publicly.
-
-## 📄 License
-
-DiskAnalyzer is released under the [MIT License](LICENSE).
+DiskAnalyzer is released under the [MIT License](LICENSE). Distributable Portable and installed builds include `LICENSE.txt` and `THIRD-PARTY-NOTICES.txt`, which contain notices and license links for the self-contained .NET runtime and related dependencies.
 
 Copyright © 2026 Alex Lin.
