@@ -18,9 +18,12 @@ public class TreemapControl : FrameworkElement
 {
     private List<TreemapNode> _nodes = [];
     private TreemapNode? _hoveredNode;
+    private TreemapNode? _selectedNode;
     private readonly ToolTip _richToolTip = new();
     private readonly Typeface _typeface = new("Segoe UI");
     private readonly LocalizationService _localization = LocalizationService.Instance;
+    private readonly DrawingVisual _contentVisual = new();
+    private readonly DrawingVisual _overlayVisual = new();
     private static readonly ConcurrentDictionary<string, (Brush Fill, Pen Border)> s_brushPenCache = new(StringComparer.OrdinalIgnoreCase);
 
     private static readonly Pen s_selectedPen;
@@ -29,6 +32,8 @@ public class TreemapControl : FrameworkElement
     private static readonly Brush s_highlightOverlayBrush;
     private static readonly Brush s_bgBrush;
     private static readonly Brush s_cushionOverlayBrush;
+    private static readonly Brush s_noDataTextBrush;
+    private static readonly Brush s_secondaryTextBrush;
 
     static TreemapControl()
     {
@@ -52,6 +57,14 @@ public class TreemapControl : FrameworkElement
         bg.Freeze();
         s_bgBrush = bg;
 
+        var noDataTextBrush = new SolidColorBrush(Color.FromRgb(160, 160, 184));
+        noDataTextBrush.Freeze();
+        s_noDataTextBrush = noDataTextBrush;
+
+        var secondaryTextBrush = new SolidColorBrush(Color.FromArgb(220, 220, 220, 240));
+        secondaryTextBrush.Freeze();
+        s_secondaryTextBrush = secondaryTextBrush;
+
         // Cushion gradient overlay for rich 3D look
         var gradient = new LinearGradientBrush(
             Color.FromArgb(45, 255, 255, 255),
@@ -66,6 +79,8 @@ public class TreemapControl : FrameworkElement
     {
         ClipToBounds = true;
         Focusable = true;
+        AddVisualChild(_contentVisual);
+        AddVisualChild(_overlayVisual);
 
         _localization.LanguageChanged += (_, _) =>
         {
@@ -75,6 +90,9 @@ public class TreemapControl : FrameworkElement
                 {
                     UpdateToolTipContent(_hoveredNode.Item);
                 }
+
+                RenderBaseVisual();
+                RenderOverlayVisual();
             }
 
             if (Dispatcher.CheckAccess())
@@ -102,7 +120,10 @@ public class TreemapControl : FrameworkElement
             {
                 _nodes = [];
                 _hoveredNode = null;
-                InvalidateVisual();
+                _selectedNode = null;
+                _richToolTip.IsOpen = false;
+                RenderBaseVisual();
+                RenderOverlayVisual();
             }
         };
     }
@@ -113,7 +134,7 @@ public class TreemapControl : FrameworkElement
         nameof(RootItem),
         typeof(FileSystemItem),
         typeof(TreemapControl),
-        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, OnRootItemChanged));
+        new FrameworkPropertyMetadata(null, OnRootItemChanged));
 
     public FileSystemItem? RootItem
     {
@@ -125,7 +146,7 @@ public class TreemapControl : FrameworkElement
         nameof(SelectedItem),
         typeof(FileSystemItem),
         typeof(TreemapControl),
-        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, OnSelectedItemChanged));
+        new FrameworkPropertyMetadata(null, OnSelectedItemChanged));
 
     public FileSystemItem? SelectedItem
     {
@@ -168,7 +189,7 @@ public class TreemapControl : FrameworkElement
 
     private static void OnRootItemChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is TreemapControl control && control.IsVisible)
+        if (d is TreemapControl control)
         {
             control.RecomputeLayout();
         }
@@ -176,33 +197,68 @@ public class TreemapControl : FrameworkElement
 
     private static void OnSelectedItemChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is TreemapControl control && control.IsVisible)
+        if (d is TreemapControl control)
         {
-            control.InvalidateVisual();
+            control._selectedNode = control.FindNode(control.SelectedItem);
+            control.RenderOverlayVisual();
         }
     }
 
+    protected override int VisualChildrenCount => 2;
+
+    protected override Visual GetVisualChild(int index) => index switch
+    {
+        0 => _contentVisual,
+        1 => _overlayVisual,
+        _ => throw new ArgumentOutOfRangeException(nameof(index))
+    };
+
     public void RecomputeLayout()
     {
+        _hoveredNode = null;
+        _richToolTip.IsOpen = false;
         if (!IsVisible || ActualWidth <= 0 || ActualHeight <= 0 || RootItem == null)
         {
             _nodes = [];
-            InvalidateVisual();
+            _selectedNode = null;
+            RenderBaseVisual();
+            RenderOverlayVisual();
             return;
         }
 
         var bounds = new RectD(0, 0, ActualWidth, ActualHeight);
         _nodes = SquarifiedTreemap.ComputeLayout(RootItem, bounds, maxDepth: 4, minPixelSize: 3.5);
-        InvalidateVisual();
+        _selectedNode = FindNode(SelectedItem);
+        RenderBaseVisual();
+        RenderOverlayVisual();
     }
 
-    protected override void OnRender(DrawingContext dc)
+    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     {
-        base.OnRender(dc);
+        base.OnDpiChanged(oldDpi, newDpi);
+        RecomputeLayout();
+    }
+
+    private TreemapNode? FindNode(FileSystemItem? item)
+    {
+        if (item == null)
+            return null;
+
+        foreach (var node in _nodes)
+        {
+            if (ReferenceEquals(node.Item, item))
+                return node;
+        }
+
+        return null;
+    }
+
+    protected virtual void RenderBaseVisual()
+    {
+        using var dc = _contentVisual.RenderOpen();
 
         if (!IsVisible || ActualWidth <= 0 || ActualHeight <= 0)
             return;
-
 
         var entireRect = new Rect(0, 0, ActualWidth, ActualHeight);
         dc.DrawRectangle(s_bgBrush, null, entireRect);
@@ -215,7 +271,7 @@ public class TreemapControl : FrameworkElement
                 FlowDirection.LeftToRight,
                 _typeface,
                 14,
-                new SolidColorBrush(Color.FromRgb(160, 160, 184)),
+                s_noDataTextBrush,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
             var pt = new Point(
@@ -224,9 +280,6 @@ public class TreemapControl : FrameworkElement
             dc.DrawText(noDataText, pt);
             return;
         }
-
-        TreemapNode? selectedNode = null;
-        TreemapNode? hoveredNode = _hoveredNode;
 
         double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
 
@@ -238,11 +291,6 @@ public class TreemapControl : FrameworkElement
 
             if (wpfRect.Width <= 0 || wpfRect.Height <= 0)
                 continue;
-
-            if (node.Item == SelectedItem)
-            {
-                selectedNode = node;
-            }
 
             var (fillBrush, borderPen) = GetCachedBrushAndPen(node.ColorHex);
 
@@ -284,7 +332,7 @@ public class TreemapControl : FrameworkElement
                         FlowDirection.LeftToRight,
                         _typeface,
                         10,
-                        new SolidColorBrush(Color.FromArgb(220, 220, 220, 240)),
+                        s_secondaryTextBrush,
                         dpi);
 
                     sizeText.MaxTextWidth = Math.Max(1, wpfRect.Width - 6);
@@ -298,18 +346,27 @@ public class TreemapControl : FrameworkElement
             }
         }
 
-        // Draw hover highlight
-        if (hoveredNode != null && hoveredNode != selectedNode)
+    }
+
+    private void RenderOverlayVisual()
+    {
+        using var dc = _overlayVisual.RenderOpen();
+
+        if (!IsVisible || ActualWidth <= 0 || ActualHeight <= 0)
+            return;
+
+        // Hover and selection are isolated from the tile visual, so pointer movement
+        // redraws two lightweight rectangles rather than every tile and label.
+        if (_hoveredNode != null && _hoveredNode != _selectedNode)
         {
-            var hb = hoveredNode.Bounds;
+            var hb = _hoveredNode.Bounds;
             var hRect = new Rect(hb.X, hb.Y, hb.Width, hb.Height);
             dc.DrawRectangle(null, s_hoveredPen, hRect);
         }
 
-        // Draw selected highlight (with glow)
-        if (selectedNode != null)
+        if (_selectedNode != null)
         {
-            var sb = selectedNode.Bounds;
+            var sb = _selectedNode.Bounds;
             var sRect = new Rect(sb.X, sb.Y, sb.Width, sb.Height);
             dc.DrawRectangle(s_highlightOverlayBrush, s_selectedPen, sRect);
         }
@@ -341,12 +398,17 @@ public class TreemapControl : FrameworkElement
     {
         base.OnMouseMove(e);
         var pos = e.GetPosition(this);
+        UpdateHover(pos);
+    }
+
+    protected void UpdateHover(Point pos)
+    {
         var hit = SquarifiedTreemap.HitTest(_nodes, pos.X, pos.Y);
 
         if (hit != _hoveredNode)
         {
             _hoveredNode = hit;
-            InvalidateVisual();
+            RenderOverlayVisual();
 
             if (hit != null)
             {
@@ -367,7 +429,7 @@ public class TreemapControl : FrameworkElement
         {
             _hoveredNode = null;
             _richToolTip.IsOpen = false;
-            InvalidateVisual();
+            RenderOverlayVisual();
         }
     }
 
@@ -397,8 +459,6 @@ public class TreemapControl : FrameworkElement
                     DiskAnalyzer.Core.Native.ShellOperations.Open(hit.Item.GetFullPath());
                 }
             }
-
-            InvalidateVisual();
         }
     }
 
@@ -413,7 +473,6 @@ public class TreemapControl : FrameworkElement
             SelectedItem = hit.Item;
             ItemClicked?.Invoke(this, hit.Item);
             ItemClickedCommand?.Execute(hit.Item);
-            InvalidateVisual();
         }
     }
 

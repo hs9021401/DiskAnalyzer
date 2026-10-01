@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
 using DiskAnalyzer.Core.Models;
 
 namespace DiskAnalyzer.Core.Search;
@@ -117,8 +118,17 @@ public static class FileSearchEngine
     /// Searches flat list of file system items matching criteria.
     /// </summary>
     public static List<FileSystemItem> Search(IEnumerable<FileSystemItem> items, SearchCriteria criteria)
+        => Search(items, criteria, CancellationToken.None);
+
+    public static List<FileSystemItem> Search(IEnumerable<FileSystemItem> items, SearchCriteria criteria,
+        CancellationToken cancellationToken, int maxResults = int.MaxValue)
     {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(criteria);
+        ArgumentOutOfRangeException.ThrowIfNegative(maxResults);
+        cancellationToken.ThrowIfCancellationRequested();
         var result = new List<FileSystemItem>();
+        if (maxResults == 0) return result;
         Regex? regex = null;
         string? queryPattern = null;
 
@@ -127,11 +137,18 @@ public static class FileSearchEngine
             if (criteria.UseRegex)
             {
                 var options = criteria.MatchCase ? RegexOptions.Compiled : RegexOptions.Compiled | RegexOptions.IgnoreCase;
-                regex = new Regex(criteria.Query, options);
+                regex = new Regex(criteria.Query, options, TimeSpan.FromMilliseconds(250));
             }
             else
             {
                 queryPattern = criteria.Query;
+                if (queryPattern.Contains('*') || queryPattern.Contains('?'))
+                {
+                    string pattern = "^" + Regex.Escape(queryPattern)
+                        .Replace(@"\*", ".*").Replace(@"\?", ".") + "$";
+                    regex = new Regex(pattern, criteria.MatchCase ? RegexOptions.None : RegexOptions.IgnoreCase,
+                        TimeSpan.FromMilliseconds(250));
+                }
             }
         }
 
@@ -139,6 +156,7 @@ public static class FileSearchEngine
 
         foreach (var item in items)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (item.IsVirtual)
                 continue;
 
@@ -161,7 +179,7 @@ public static class FileSearchEngine
                 continue;
 
             // Extension filter
-            if (!string.IsNullOrEmpty(targetExt))
+            if (targetExt != null)
             {
                 string ext = item.Extension.TrimStart('.').ToLowerInvariant();
                 if (!string.Equals(ext, targetExt, StringComparison.OrdinalIgnoreCase))
@@ -187,6 +205,7 @@ public static class FileSearchEngine
             }
 
             result.Add(item);
+            if (result.Count >= maxResults) break;
         }
 
         return result;

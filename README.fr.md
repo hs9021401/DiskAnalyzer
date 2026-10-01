@@ -10,7 +10,7 @@ DiskAnalyzer est un outil Windows x64 développé avec WPF et .NET 10. Il constr
 
 ## ✨ Fonctionnalités
 
-- **Analyse rapide** : utilise `$MFT` et l’USN Change Journal NTFS lorsque c’est possible, avec une analyse Win32 parallèle pour les dossiers, les volumes non NTFS ou les accès restreints.
+- **Analyse rapide** : utilise `$MFT` pour analyser les volumes NTFS entiers lorsque les droits le permettent. Les dossiers, les volumes non NTFS, les accès restreints et les échecs de lecture de `$MFT` sont traités par l’analyse Win32 parallèle.
 - **Vues multiples** : parcourez les dossiers dans le Tree View hiérarchique, trouvez les gros fichiers avec File View, regroupez l’espace par extension dans File Types ou comparez visuellement les tailles avec le Treemap.
 - **Opérations dans l’arbre** : sélection multiple avec Ctrl/Shift, opérations groupées depuis le menu contextuel, ouverture automatique du premier niveau après l’analyse et ouverture des fichiers par double-clic.
 - **Calcul précis** : déduplication des hard links NTFS et éléments virtuels Free Space et Allocated/System Space.

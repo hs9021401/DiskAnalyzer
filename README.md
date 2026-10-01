@@ -10,7 +10,7 @@ DiskAnalyzer 是以 WPF 和 .NET 10 開發的 Windows x64 磁碟空間分析工�
 
 ## ✨ 主要功能
 
-- **高速掃描**：在適用條件下使用 NTFS `$MFT` 與 USN Change Journal；指定資料夾、非 NTFS 磁區或權限受限時，會改用 Win32 平行掃描。
+- **高速掃描**：掃描完整 NTFS 磁區且權限足夠時使用 `$MFT`；指定資料夾、非 NTFS 磁區、權限受限或 `$MFT` 讀取失敗時，改用 Win32 平行掃描。
 - **多種檢視方式**：以階層式 Tree View 瀏覽資料夾，使用 File View 尋找大型檔案，透過 File Types 依副檔名彙整容量，或使用 Treemap 以圖形方式比較檔案大小。
 - **便利的樹狀操作**：支援 Ctrl/Shift 多選、右鍵批次操作、掃描完成後自動展開第一層，以及雙擊開啟檔案。
 - **精準容量統計**：支援 NTFS Hard Link 去重，並可顯示 Free Space 與 Allocated/System Space 等虛擬項目。

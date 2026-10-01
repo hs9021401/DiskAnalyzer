@@ -18,6 +18,7 @@ public static class ShellOperations
         try
         {
             if (string.IsNullOrWhiteSpace(path)) return false;
+
             var psi = new ProcessStartInfo
             {
                 FileName = path,
@@ -28,7 +29,22 @@ public static class ShellOperations
         }
         catch
         {
-            return false;
+            try
+            {
+                // Fallback: Open with Explorer
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"\"{path}\"",
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 
@@ -132,48 +148,25 @@ public static class ShellOperations
     /// Sends a file or directory to the Windows Recycle Bin.
     /// </summary>
     public static bool MoveToRecycleBin(string path, bool confirm = false)
-    {
-        if (!OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(path))
-            return false;
-
-        try
-        {
-            ushort flags = NativeMethods.FOF_ALLOWUNDO;
-            if (!confirm)
-            {
-                flags |= NativeMethods.FOF_NOCONFIRMATION | NativeMethods.FOF_SILENT;
-            }
-
-            // Path must be double null-terminated for SHFileOperation
-            string pFrom = path + "\0\0";
-
-            var op = new NativeMethods.SHFILEOPSTRUCTW
-            {
-                wFunc = NativeMethods.FO_DELETE,
-                pFrom = pFrom,
-                fFlags = flags
-            };
-
-            int result = NativeMethods.SHFileOperationW(ref op);
-            return result == 0 && !op.fAnyOperationsAborted;
-        }
-        catch
-        {
-            return false;
-        }
-    }
+        => DeleteUsingShell(path, confirm, recycle: true);
 
     /// <summary>
     /// Permanently deletes a file or directory bypassing the Recycle Bin.
     /// </summary>
     public static bool PermanentDelete(string path, bool confirm = false)
+        => DeleteUsingShell(path, confirm, recycle: false);
+
+    internal delegate int ShellDeleteOperation(ref NativeMethods.SHFILEOPSTRUCTW operation);
+
+    internal static bool DeleteUsingShell(string path, bool confirm, bool recycle,
+        ShellDeleteOperation? shellOperation = null)
     {
         if (!OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(path))
             return false;
 
         try
         {
-            ushort flags = 0;
+            ushort flags = recycle ? NativeMethods.FOF_ALLOWUNDO : (ushort)0;
             if (!confirm)
             {
                 flags |= NativeMethods.FOF_NOCONFIRMATION | NativeMethods.FOF_SILENT;
@@ -188,7 +181,7 @@ public static class ShellOperations
                 fFlags = flags
             };
 
-            int result = NativeMethods.SHFileOperationW(ref op);
+            int result = (shellOperation ?? NativeMethods.SHFileOperationW)(ref op);
             return result == 0 && !op.fAnyOperationsAborted;
         }
         catch

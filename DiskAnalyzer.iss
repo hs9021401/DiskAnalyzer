@@ -5,7 +5,7 @@
 ; =====================================================================
 
 #define MyAppName "DiskAnalyzer"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.2"
 #define MyAppPublisher "Alex Lin"
 #define MyAppExeName "DiskAnalyzer.exe"
 #define MyAppCopyright "Copyright © 2026 Alex Lin"

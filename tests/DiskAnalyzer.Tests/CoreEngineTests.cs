@@ -1,7 +1,10 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Threading;
+using System.Text;
 using DiskAnalyzer.Core.Export;
 using DiskAnalyzer.Core.Mft;
 using DiskAnalyzer.Core.Models;
@@ -15,6 +18,256 @@ namespace DiskAnalyzer.Tests;
 
 public class CoreEngineTests
 {
+    [Fact]
+    public void CoreTypes_AreLoadedFromTheCoreAssembly()
+    {
+        Assert.Equal("DiskAnalyzer.Core", typeof(DiskScanEngine).Assembly.GetName().Name);
+        Assert.Equal(typeof(DiskScanEngine).Assembly, typeof(ShellOperations).Assembly);
+    }
+
+    [Fact]
+    public void SearchEngine_CancelsDuringEnumerationAndStopsAtTheResultLimit()
+    {
+        using var cts = new CancellationTokenSource();
+        IEnumerable<FileSystemItem> CancelDuringEnumeration()
+        {
+            yield return new FileSystemItem { Name = "first" };
+            cts.Cancel();
+            yield return new FileSystemItem { Name = "second" };
+        }
+        Assert.Throws<OperationCanceledException>(() =>
+            FileSearchEngine.Search(CancelDuringEnumeration(), new SearchCriteria(), cts.Token));
+
+        IEnumerable<FileSystemItem> OnlyReadOne()
+        {
+            yield return new FileSystemItem { Name = "first" };
+            throw new InvalidOperationException("Search read beyond its result limit.");
+        }
+        var result = Assert.Single(FileSearchEngine.Search(OnlyReadOne(), new SearchCriteria(),
+            CancellationToken.None, maxResults: 1));
+        Assert.Equal("first", result.Name);
+    }
+
+    [Fact]
+    public void SearchEngine_EmptyExtensionMeansFilesWithoutAnExtension()
+    {
+        FileSystemItem[] items =
+        [
+            new() { Name = "README", Extension = "" },
+            new() { Name = "notes.txt", Extension = ".txt" }
+        ];
+        Assert.Equal("README", Assert.Single(FileSearchEngine.Search(items,
+            new SearchCriteria { Extension = "" })).Name);
+        Assert.Equal(2, FileSearchEngine.Search(items, new SearchCriteria()).Count);
+    }
+
+    [Fact]
+    public void NtfsUsnReader_ParsesUnicodeV2RecordsAndRejectsInvalidBounds()
+    {
+        byte[] name = Encoding.Unicode.GetBytes("測試.TXT");
+        byte[] record = new byte[60 + name.Length];
+        BinaryPrimitives.WriteUInt32LittleEndian(record, (uint)record.Length);
+        BinaryPrimitives.WriteUInt16LittleEndian(record.AsSpan(4), 2);
+        BinaryPrimitives.WriteUInt64LittleEndian(record.AsSpan(8), 0x001200000000002A);
+        BinaryPrimitives.WriteUInt64LittleEndian(record.AsSpan(16), 5);
+        BinaryPrimitives.WriteUInt32LittleEndian(record.AsSpan(52), (uint)FileAttributes.Archive);
+        BinaryPrimitives.WriteUInt16LittleEndian(record.AsSpan(56), (ushort)name.Length);
+        BinaryPrimitives.WriteUInt16LittleEndian(record.AsSpan(58), 60);
+        name.CopyTo(record, 60);
+
+        var item = NtfsUsnReader.ParseRecord(record, out int consumed);
+        Assert.Equal(record.Length, consumed);
+        Assert.Equal("測試.TXT", item.Name);
+        Assert.Equal(42UL, item.FileRecordNumber);
+        Assert.Equal(5UL, item.ParentRecordNumber);
+        Assert.False(item.IsDirectory);
+        Assert.Equal(".TXT", item.Extension);
+
+        Assert.Throws<InvalidDataException>(() => NtfsUsnReader.ParseRecord(record.AsSpan(0, 59), out _));
+        BinaryPrimitives.WriteUInt16LittleEndian(record.AsSpan(58), (ushort)record.Length);
+        Assert.Throws<InvalidDataException>(() => NtfsUsnReader.ParseRecord(record, out _));
+        BinaryPrimitives.WriteUInt16LittleEndian(record.AsSpan(58), 60);
+        BinaryPrimitives.WriteUInt16LittleEndian(record.AsSpan(4), 3);
+        Assert.Throws<NotSupportedException>(() => NtfsUsnReader.ParseRecord(record, out _));
+        BinaryPrimitives.WriteUInt32LittleEndian(record, 0);
+        Assert.Throws<InvalidDataException>(() => NtfsUsnReader.ParseRecord(record, out _));
+    }
+
+    [Fact]
+    public void ScanReaders_PreservePreCancelledRequests()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        Assert.Throws<OperationCanceledException>(() =>
+            new NtfsMftReader().ReadDrive(@"C:\", cancellationToken: cts.Token));
+        Assert.Throws<OperationCanceledException>(() =>
+            new NtfsUsnReader().ReadDrive(@"C:\", cancellationToken: cts.Token));
+        Assert.Throws<OperationCanceledException>(() =>
+            new FastDirectoryScanner().Scan(AppContext.BaseDirectory, cancellationToken: cts.Token));
+        Assert.Throws<OperationCanceledException>(() =>
+            new DiskScanEngine().Scan(new ScanOptions { Path = AppContext.BaseDirectory }, cancellationToken: cts.Token));
+    }
+
+    [Fact]
+    public void PrivilegeManager_RejectsUnknownAndEmptyPrivilegeNames()
+    {
+        Assert.False(PrivilegeManager.EnablePrivilege(""));
+        Assert.False(PrivilegeManager.EnablePrivilege("DiskAnalyzer_InvalidPrivilege"));
+        using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+        var principal = new System.Security.Principal.WindowsPrincipal(identity);
+        Assert.Equal(principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator),
+            PrivilegeManager.IsAdministrator);
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
+    public void ShellDeletion_FailureNeverFallsBackToDirectDeletion(bool recycle, bool confirm)
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"DiskAnalyzerDeleteTest_{Guid.NewGuid():N}.txt");
+        File.WriteAllText(path, "preserve this file");
+        try
+        {
+            int calls = 0;
+            int FailShellOperation(ref NativeMethods.SHFILEOPSTRUCTW operation)
+            {
+                calls++;
+                Assert.Equal(path + "\0\0", operation.pFrom);
+                Assert.Equal(recycle, (operation.fFlags & NativeMethods.FOF_ALLOWUNDO) != 0);
+                Assert.Equal(!confirm, (operation.fFlags & NativeMethods.FOF_NOCONFIRMATION) != 0);
+                return 5;
+            }
+            Assert.False(ShellOperations.DeleteUsingShell(path, confirm, recycle, FailShellOperation));
+            Assert.Equal(1, calls);
+            Assert.Equal("preserve this file", File.ReadAllText(path));
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Theory]
+    [InlineData(ScanMode.Auto)]
+    [InlineData(ScanMode.UsnJournal)]
+    public void DiskScanEngine_FolderScanNeverIncludesTheRestOfTheVolume(ScanMode mode)
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"DiskAnalyzerScopeTest_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(path);
+        string file = Path.Combine(path, "only.bin");
+        File.WriteAllBytes(file, new byte[123]);
+        try
+        {
+            var result = new DiskScanEngine().Scan(new ScanOptions { Path = path, ScanMode = mode });
+            Assert.Equal(123, result.Size);
+            Assert.Equal(file, Assert.Single(DiskScanEngine.FlattenFiles(result)).GetFullPath());
+        }
+        finally { Directory.Delete(path, true); }
+    }
+
+    [Fact]
+    public void DiskScanEngine_DirectMftFailureFallsBackStraightToWalker()
+    {
+        int mftCalls = 0;
+        int usnCalls = 0;
+        int walkerCalls = 0;
+        var engine = new DiskScanEngine(
+            (_, _, _, _) => { mftCalls++; throw new IOException("MFT failure"); },
+            (_, _, _, _) => { usnCalls++; return new FileSystemItem { Name = "USN" }; },
+            (_, _, _, _) => { walkerCalls++; return new FileSystemItem { Name = "Walker" }; });
+
+        var result = engine.Scan(new ScanOptions { Path = @"C:\", ScanMode = ScanMode.DirectMft });
+
+        Assert.Equal("Walker", result.Name);
+        Assert.Equal(1, mftCalls);
+        Assert.Equal(0, usnCalls);
+        Assert.Equal(1, walkerCalls);
+    }
+
+    [Fact]
+    public void DiskScanEngine_SuccessfulDirectMftDoesNotFallback()
+    {
+        int mftCalls = 0;
+        int usnCalls = 0;
+        int walkerCalls = 0;
+        var engine = new DiskScanEngine(
+            (_, _, _, _) => { mftCalls++; return new FileSystemItem { Name = "MFT" }; },
+            (_, _, _, _) => { usnCalls++; return new FileSystemItem { Name = "USN" }; },
+            (_, _, _, _) => { walkerCalls++; return new FileSystemItem { Name = "Walker" }; });
+
+        var result = engine.Scan(new ScanOptions { Path = @"C:\", ScanMode = ScanMode.DirectMft });
+
+        Assert.Equal("MFT", result.Name);
+        Assert.Equal(1, mftCalls);
+        Assert.Equal(0, usnCalls);
+        Assert.Equal(0, walkerCalls);
+    }
+
+    [Fact]
+    public void DiskScanEngine_DirectMftCancellationDoesNotFallback()
+    {
+        int usnCalls = 0;
+        int walkerCalls = 0;
+        var engine = new DiskScanEngine(
+            (_, _, _, _) => throw new OperationCanceledException(),
+            (_, _, _, _) => { usnCalls++; return new FileSystemItem(); },
+            (_, _, _, _) => { walkerCalls++; return new FileSystemItem(); });
+
+        Assert.Throws<OperationCanceledException>(() =>
+            engine.Scan(new ScanOptions { Path = @"C:\", ScanMode = ScanMode.DirectMft }));
+        Assert.Equal(0, usnCalls);
+        Assert.Equal(0, walkerCalls);
+    }
+
+    [Fact]
+    public void DiskScanEngine_ExplicitUsnModeRunsUsnReader()
+    {
+        int mftCalls = 0;
+        int usnCalls = 0;
+        int walkerCalls = 0;
+        var engine = new DiskScanEngine(
+            (_, _, _, _) => { mftCalls++; return new FileSystemItem { Name = "MFT" }; },
+            (_, _, _, _) => { usnCalls++; return new FileSystemItem { Name = "USN" }; },
+            (_, _, _, _) => { walkerCalls++; return new FileSystemItem { Name = "Walker" }; });
+
+        var result = engine.Scan(new ScanOptions { Path = @"C:\", ScanMode = ScanMode.UsnJournal });
+
+        Assert.Equal("USN", result.Name);
+        Assert.Equal(0, mftCalls);
+        Assert.Equal(1, usnCalls);
+        Assert.Equal(0, walkerCalls);
+    }
+
+    [Fact]
+    public void DiskScanEngine_ExplicitUsnFailureFallsBackToWalker()
+    {
+        int usnCalls = 0;
+        int walkerCalls = 0;
+        var engine = new DiskScanEngine(
+            (_, _, _, _) => throw new InvalidOperationException("Unexpected MFT call"),
+            (_, _, _, _) => { usnCalls++; throw new IOException("USN failure"); },
+            (_, _, _, _) => { walkerCalls++; return new FileSystemItem { Name = "Walker" }; });
+
+        var result = engine.Scan(new ScanOptions { Path = @"C:\", ScanMode = ScanMode.UsnJournal });
+
+        Assert.Equal("Walker", result.Name);
+        Assert.Equal(1, usnCalls);
+        Assert.Equal(1, walkerCalls);
+    }
+
+    [Fact]
+    public void DiskScanEngine_ExplicitUsnCancellationDoesNotFallback()
+    {
+        int walkerCalls = 0;
+        var engine = new DiskScanEngine(
+            (_, _, _, _) => throw new InvalidOperationException("Unexpected MFT call"),
+            (_, _, _, _) => throw new OperationCanceledException(),
+            (_, _, _, _) => { walkerCalls++; return new FileSystemItem(); });
+
+        Assert.Throws<OperationCanceledException>(() =>
+            engine.Scan(new ScanOptions { Path = @"C:\", ScanMode = ScanMode.UsnJournal }));
+        Assert.Equal(0, walkerCalls);
+    }
+
     [Fact]
     public void FileSystemItem_Formatting_WorksCorrectly()
     {
@@ -60,6 +313,26 @@ public class CoreEngineTests
         root.SortChildrenBySizeDescending(false);
         Assert.Equal("Large", root.Children[0].Name);
         Assert.Equal("Small", root.Children[1].Name);
+    }
+
+    [Fact]
+    public void FileSystemItem_RecalculateAggregateStatistics_UsesTheEntireSubtree()
+    {
+        var root = new FileSystemItem { Name = "Root", IsDirectory = true };
+        var folder = new FileSystemItem { Name = "Folder", IsDirectory = true };
+        folder.AddChild(new FileSystemItem { Name = "first.bin", Size = 100, AllocatedSize = 4096 });
+        folder.AddChild(new FileSystemItem { Name = "second.bin", Size = 250, AllocatedSize = 4096 });
+        root.AddChild(folder);
+        root.AddChild(new FileSystemItem { Name = "third.bin", Size = 50, AllocatedSize = 4096 });
+
+        root.RecalculateAggregateStatistics();
+
+        Assert.Equal(400, root.Size);
+        Assert.Equal(12_288, root.AllocatedSize);
+        Assert.Equal(3, root.FileCount);
+        Assert.Equal(1, root.FolderCount);
+        Assert.Equal(350, folder.Size);
+        Assert.Equal(2, folder.FileCount);
     }
 
     [Fact]
@@ -260,6 +533,80 @@ public class CoreEngineTests
     }
 
     [Fact]
+    public void FastDirectoryScanner_VisitsEveryDirectoryUnderConcurrentLoad()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"DiskAnalyzerConcurrentScan_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+
+        const int branchCount = 16;
+        const int depthPerBranch = 4;
+        long expectedSize = 0;
+        int expectedFiles = 0;
+        int expectedFolders = 0;
+
+        try
+        {
+            for (int branch = 0; branch < branchCount; branch++)
+            {
+                string current = Path.Combine(tempDir, $"branch-{branch:D2}");
+                Directory.CreateDirectory(current);
+                expectedFolders++;
+
+                for (int depth = 0; depth < depthPerBranch; depth++)
+                {
+                    current = Path.Combine(current, $"level-{depth:D2}");
+                    Directory.CreateDirectory(current);
+                    expectedFolders++;
+
+                    int fileSize = branch + depth + 1;
+                    File.WriteAllBytes(Path.Combine(current, $"file-{branch:D2}-{depth:D2}.bin"), new byte[fileSize]);
+                    expectedFiles++;
+                    expectedSize += fileSize;
+                }
+            }
+
+            var scanner = new FastDirectoryScanner();
+            var options = new ScanOptions { Path = tempDir, MaxDegreeOfParallelism = 16 };
+
+            for (int attempt = 0; attempt < 10; attempt++)
+            {
+                var result = scanner.Scan(tempDir, options);
+
+                Assert.Equal(expectedSize, result.Size);
+                Assert.Equal(expectedFiles, result.FileCount);
+                Assert.Equal(expectedFolders, result.FolderCount);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+    }
+
+    [Fact]
+    public void ComputeExtensionSummaries_UsesCanonicalExtensionLabels()
+    {
+        var root = new FileSystemItem { Name = "Root", IsDirectory = true };
+        root.AddChild(new FileSystemItem { Name = "Report.TXT", Extension = ".TXT", Size = 100 });
+        root.AddChild(new FileSystemItem { Name = "photo.txt", Extension = ".txt", Size = 200 });
+        root.AddChild(new FileSystemItem { Name = "README", Extension = string.Empty, Size = 50 });
+        root.RecalculateAggregateStatistics();
+
+        var summaries = DiskScanEngine.ComputeExtensionSummaries(root);
+
+        var text = Assert.Single(summaries, summary => summary.Extension == ".txt");
+        Assert.Equal(300, text.TotalSize);
+        Assert.Equal(2, text.FileCount);
+
+        var noExtension = Assert.Single(summaries, summary => summary.Extension == "[No Extension]");
+        Assert.Equal(50, noExtension.TotalSize);
+        Assert.Equal(1, noExtension.FileCount);
+    }
+
+    [Fact]
     public void Benchmark_ScanRealDirectory()
     {
         string scanDir = AppContext.BaseDirectory;
@@ -281,4 +628,3 @@ public class CoreEngineTests
         Assert.NotEmpty(extBreakdown);
     }
 }
-

@@ -45,7 +45,6 @@ public class MainViewModel : ViewModelBase
     private ObservableCollection<FileSystemItem> _rootItems = [];
     private FileSystemItem? _treemapRoot;
     private FileSystemItem? _selectedItem;
-    private ObservableCollection<FileSystemItem> _topFiles = [];
     private ObservableCollection<FileSystemItem> _filteredFiles = [];
     private ObservableCollection<ExtensionSummary> _extensionBreakdown = [];
     private ExtensionSummary? _selectedExtension;
@@ -54,6 +53,8 @@ public class MainViewModel : ViewModelBase
     private ObservableCollection<FileSystemItem> _breadcrumbPaths = [];
     private int _selectedTabIndex = 0;
     private List<FileSystemItem> _allFilesCache = [];
+    private CancellationTokenSource? _filterCts;
+    private readonly object _filterGate = new();
     private bool _showTreemap = true;
 
     public MainViewModel(LocalizationService? localization = null)
@@ -220,12 +221,6 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    public ObservableCollection<FileSystemItem> TopFiles
-    {
-        get => _topFiles;
-        set => SetProperty(ref _topFiles, value);
-    }
-
     public ObservableCollection<FileSystemItem> FilteredFiles
     {
         get => _filteredFiles;
@@ -249,7 +244,7 @@ public class MainViewModel : ViewModelBase
                     value.Extension,
                     _localization.Get("NoExtensionLabel"),
                     StringComparison.OrdinalIgnoreCase);
-                ApplyFileFilter();
+                ScheduleFileFilter(debounce: false);
             }
         }
     }
@@ -261,7 +256,7 @@ public class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _searchQuery, value))
             {
-                ApplyFileFilter();
+                ScheduleFileFilter(debounce: true);
             }
         }
     }
@@ -380,7 +375,6 @@ public class MainViewModel : ViewModelBase
             {
                 SelectedExtension = replacement;
             }
-            ApplyFileFilter();
         }
     }
 
@@ -511,27 +505,32 @@ public class MainViewModel : ViewModelBase
             };
 
             var root = await _engine.ScanAsync(options, progress, _cts.Token);
-            _stopwatch.Stop();
+            var scanToken = _cts.Token;
+            var prepared = await Task.Run(() =>
+            {
+                scanToken.ThrowIfCancellationRequested();
+                var files = DiskScanEngine.FlattenFiles(root);
+                files.Sort((a, b) => b.Size.CompareTo(a.Size));
+                var summaries = DiskScanEngine.ComputeExtensionSummaries(root);
+                scanToken.ThrowIfCancellationRequested();
+                return (Files: files, Summaries: summaries);
+            }, scanToken);
+            scanToken.ThrowIfCancellationRequested();
 
-            // Post-process tree
-            root.SortChildrenBySizeDescending(true);
-            root.CalculateChildPercentages(true);
+            // Scanners already sort children and calculate percentages before publishing.
             root.IsExpanded = true;
 
             RootItem = root;
             TreemapRoot = root;
 
-            // Generate Extension Breakdown
-            var extensions = DiskScanEngine.ComputeExtensionSummaries(root);
-            LocalizeNoExtensionLabels(extensions);
-            ExtensionBreakdown = new ObservableCollection<ExtensionSummary>(extensions);
+            LocalizeNoExtensionLabels(prepared.Summaries);
+            ExtensionBreakdown = new ObservableCollection<ExtensionSummary>(prepared.Summaries);
 
             // Flatten files for high-speed tabular search and flat file grid
-            _allFilesCache = DiskScanEngine.FlattenFiles(root);
-            _allFilesCache.Sort((a, b) => b.Size.CompareTo(a.Size));
+            _allFilesCache = prepared.Files;
 
-            TopFiles = new ObservableCollection<FileSystemItem>(_allFilesCache.Take(5000));
-            ApplyFileFilter();
+            await ApplyFileFilterAsync();
+            _stopwatch.Stop();
 
             double elapsedSec = _stopwatch.Elapsed.TotalSeconds;
             double filesPerSec = elapsedSec > 0 ? root.FileCount / elapsedSec : 0;
@@ -661,27 +660,84 @@ public class MainViewModel : ViewModelBase
         BreadcrumbPaths = new ObservableCollection<FileSystemItem>(breadcrumbs);
     }
 
-    public void ApplyFileFilter()
+    private void ScheduleFileFilter(bool debounce)
     {
+        _ = ApplyFileFilterAsync(debounce);
+    }
+
+    public async Task ApplyFileFilterAsync(bool debounce = false)
+    {
+        var filterCts = new CancellationTokenSource();
+        lock (_filterGate)
+        {
+            var previousFilterCts = _filterCts;
+            _filterCts = filterCts;
+            previousFilterCts?.Cancel();
+        }
+
         if (_allFilesCache.Count == 0)
         {
-            FilteredFiles = [];
+            lock (_filterGate)
+            {
+                if (ReferenceEquals(_filterCts, filterCts))
+                {
+                    FilteredFiles = [];
+                    _filterCts = null;
+                }
+                filterCts.Dispose();
+            }
             return;
         }
 
         var criteria = new SearchCriteria
         {
             Query = string.IsNullOrWhiteSpace(SearchQuery) ? null : SearchQuery.Trim(),
-            Extension = SelectedExtension?.Extension == _localization.Get("NoExtensionLabel")
+            Extension = _selectedExtensionIsNoExtension
                 ? string.Empty
                 : SelectedExtension?.Extension
         };
 
-        var filtered = FileSearchEngine.Search(_allFilesCache, criteria);
-        filtered.Sort((a, b) => b.Size.CompareTo(a.Size));
+        // The scan cache is already sorted by size. Treat it as immutable while a search
+        // is running, so FileSearchEngine preserves that order without another full sort.
+        var files = _allFilesCache;
 
-        // Limit UI view to top 5,000 matches for ultra-snappy responsiveness
-        FilteredFiles = new ObservableCollection<FileSystemItem>(filtered.Take(5000));
+        try
+        {
+            if (debounce)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(200), filterCts.Token);
+            }
+
+            var filtered = await Task.Run(
+                () => FileSearchEngine.Search(files, criteria, filterCts.Token, maxResults: 5000),
+                filterCts.Token);
+
+            lock (_filterGate)
+            {
+                if (!filterCts.IsCancellationRequested && ReferenceEquals(_filterCts, filterCts))
+                {
+                    // Limit UI view to top 5,000 matches for ultra-snappy responsiveness.
+                    FilteredFiles = new ObservableCollection<FileSystemItem>(filtered);
+                }
+            }
+        }
+        catch (OperationCanceledException) when (filterCts.IsCancellationRequested)
+        {
+            // A newer query superseded this filter request.
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceWarning("DiskAnalyzer file filter failed: {0} (0x{1:X8})", ex.GetType().Name, ex.HResult);
+        }
+        finally
+        {
+            lock (_filterGate)
+            {
+                if (ReferenceEquals(_filterCts, filterCts))
+                    _filterCts = null;
+                filterCts.Dispose();
+            }
+        }
     }
 
     public async Task ExecuteExportCsvAsync()
@@ -890,23 +946,16 @@ public class MainViewModel : ViewModelBase
 
         if (confirm == MessageBoxResult.Yes)
         {
-            int deletedCount = 0;
-            foreach (var item in targets)
-            {
-                string path = item.GetFullPath();
-                if (ShellOperations.MoveToRecycleBin(path, confirm: false))
-                {
-                    RemoveItemFromTree(item);
-                    deletedCount++;
-                }
-            }
+            var deletedItems = DeleteItemsAndRefresh(
+                targets,
+                item => ShellOperations.MoveToRecycleBin(item.GetFullPath(), confirm: false));
+            int deletedCount = deletedItems.Count;
 
             if (deletedCount > 0)
             {
-                RefreshViewsAfterModification();
                 SetStatus(
                     deletedCount == 1 ? "MovedToRecycleBinStatus" : "MovedItemsToRecycleBinStatus",
-                    deletedCount == 1 ? targets[0].GetFullPath() : deletedCount);
+                    deletedCount == 1 ? deletedItems[0].GetFullPath() : deletedCount);
             }
             else
             {
@@ -936,23 +985,16 @@ public class MainViewModel : ViewModelBase
 
         if (confirm == MessageBoxResult.Yes)
         {
-            int deletedCount = 0;
-            foreach (var item in targets)
-            {
-                string path = item.GetFullPath();
-                if (ShellOperations.PermanentDelete(path, confirm: false))
-                {
-                    RemoveItemFromTree(item);
-                    deletedCount++;
-                }
-            }
+            var deletedItems = DeleteItemsAndRefresh(
+                targets,
+                item => ShellOperations.PermanentDelete(item.GetFullPath(), confirm: false));
+            int deletedCount = deletedItems.Count;
 
             if (deletedCount > 0)
             {
-                RefreshViewsAfterModification();
                 SetStatus(
                     deletedCount == 1 ? "PermanentlyDeletedStatus" : "PermanentlyDeletedItemsStatus",
-                    deletedCount == 1 ? targets[0].GetFullPath() : deletedCount);
+                    deletedCount == 1 ? deletedItems[0].GetFullPath() : deletedCount);
             }
             else
             {
@@ -972,47 +1014,78 @@ public class MainViewModel : ViewModelBase
         ShellOperations.ShowProperties(path);
     }
 
-    private void RemoveItemFromTree(FileSystemItem item)
+    private List<FileSystemItem> DeleteItemsAndRefresh(
+        IEnumerable<FileSystemItem> items,
+        Func<FileSystemItem, bool> delete)
     {
-        // Propagate size subtractions up to root
-        var currParent = item.Parent;
-        while (currParent != null)
+        var uniqueItems = items.Distinct().ToList();
+        var selected = uniqueItems.ToHashSet();
+        var targets = uniqueItems
+            .Where(item => !HasSelectedAncestor(item.Parent, selected))
+            .ToList();
+        var deletedItems = new List<FileSystemItem>();
+        foreach (var item in targets)
         {
-            currParent.Size = Math.Max(0, currParent.Size - item.Size);
-            currParent.AllocatedSize = Math.Max(0, currParent.AllocatedSize - item.AllocatedSize);
-            if (item.IsDirectory)
-            {
-                currParent.FolderCount = Math.Max(0, currParent.FolderCount - (item.FolderCount + 1));
-                currParent.FileCount = Math.Max(0, currParent.FileCount - item.FileCount);
-            }
-            else
-            {
-                currParent.FileCount = Math.Max(0, currParent.FileCount - 1);
-            }
-            currParent = currParent.Parent;
+            if (delete(item))
+                deletedItems.Add(item);
         }
 
-        item.Parent?.Children.Remove(item);
-        _allFilesCache.Remove(item);
-        TopFiles.Remove(item);
-        FilteredFiles.Remove(item);
+        if (deletedItems.Count == 0)
+            return deletedItems;
 
-        if (SelectedItem == item)
+        var removedItems = new HashSet<FileSystemItem>();
+        foreach (var item in deletedItems)
+        {
+            removedItems.UnionWith(item.IsDirectory
+                ? DiskScanEngine.FlattenAll(item)
+                : [item]);
+
+            // Each normalized target is disjoint, so its aggregate statistics are subtracted once.
+            var currParent = item.Parent;
+            while (currParent != null)
+            {
+                currParent.Size = Math.Max(0, currParent.Size - item.Size);
+                currParent.AllocatedSize = Math.Max(0, currParent.AllocatedSize - item.AllocatedSize);
+                if (item.IsDirectory)
+                {
+                    currParent.FolderCount = Math.Max(0, currParent.FolderCount - (item.FolderCount + 1));
+                    currParent.FileCount = Math.Max(0, currParent.FileCount - item.FileCount);
+                }
+                else
+                {
+                    currParent.FileCount = Math.Max(0, currParent.FileCount - 1);
+                }
+                currParent = currParent.Parent;
+            }
+
+            item.Parent?.Children.Remove(item);
+        }
+
+        // Replace, rather than mutate, the snapshot captured by any in-flight filter.
+        _allFilesCache = _allFilesCache
+            .Where(file => !removedItems.Contains(file))
+            .ToList();
+
+        if (SelectedItem != null && removedItems.Contains(SelectedItem))
         {
             SelectedItem = null;
         }
-        _selectedItems.Remove(item);
+        _selectedItems.RemoveAll(removedItems.Contains);
+        if (TreemapRoot != null && removedItems.Contains(TreemapRoot))
+            TreemapRoot = RootItem;
+
+        RefreshViewsAfterModification();
+        return deletedItems;
     }
 
     private void RefreshViewsAfterModification()
     {
         RootItem?.CalculateChildPercentages(true);
 
-        // Re-evaluate TopFiles and FilteredFiles
-        ApplyFileFilter();
-
-        // Re-calculate Extension Breakdown
+        // Re-calculate Extension Breakdown before filtering, so all UI summaries use
+        // DiskScanEngine's canonical extension normalization.
         UpdateExtensionBreakdown();
+        ScheduleFileFilter(debounce: false);
 
         // Refresh Treemap
         var currentTreemapRoot = TreemapRoot;
@@ -1025,36 +1098,14 @@ public class MainViewModel : ViewModelBase
 
     private void UpdateExtensionBreakdown()
     {
-        var dict = new Dictionary<string, (long Size, long Count)>(StringComparer.OrdinalIgnoreCase);
-        foreach (var f in _allFilesCache)
+        if (RootItem == null)
         {
-            string ext = string.IsNullOrEmpty(f.Extension)
-                ? _localization.Get("NoExtensionLabel")
-                : f.Extension.ToUpperInvariant();
-            if (dict.TryGetValue(ext, out var val))
-            {
-                dict[ext] = (val.Size + f.Size, val.Count + 1);
-            }
-            else
-            {
-                dict[ext] = (f.Size, 1);
-            }
+            ExtensionBreakdown = [];
+            return;
         }
 
-        long totalSize = RootItem?.Size > 0 ? RootItem.Size : 1;
-        var list = new List<ExtensionSummary>();
-        foreach (var kvp in dict)
-        {
-            list.Add(new ExtensionSummary
-            {
-                Extension = kvp.Key,
-                TotalSize = kvp.Value.Size,
-                FileCount = kvp.Value.Count,
-                Percentage = ((double)kvp.Value.Size / totalSize) * 100.0,
-                ColorHex = ExtensionSummary.GetColorForExtension(kvp.Key)
-            });
-        }
-        list.Sort((a, b) => b.TotalSize.CompareTo(a.TotalSize));
+        var list = DiskScanEngine.ComputeExtensionSummaries(RootItem);
+        LocalizeNoExtensionLabels(list);
         ExtensionBreakdown = new ObservableCollection<ExtensionSummary>(list);
     }
 

@@ -24,6 +24,7 @@ public class NtfsMftReader
     /// </summary>
     public unsafe FileSystemItem ReadDrive(string drivePath, ScanOptions? options = null, IProgress<ScanProgress>? progress = null, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         options ??= new ScanOptions();
         var sw = Stopwatch.StartNew();
 
@@ -98,19 +99,24 @@ public class NtfsMftReader
             ElapsedTime = sw.Elapsed
         });
 
-        // Step 2: Stream the entire MFT using large aligned read buffers
-        var rawRecords = new Dictionary<ulong, MftRawRecord>(100_000);
-        var extensionRecords = new List<MftRawRecord>();
-
         int bufferSize = Math.Max(options.BufferSize, (int)(bytesPerCluster * 64)); // Align to clusters
         bufferSize = (int)((bufferSize / bytesPerCluster) * bytesPerCluster);
         byte[] readBuffer = GC.AllocateUninitializedArray<byte>(bufferSize, pinned: true);
 
         long totalRecordsToRead = mftValidLength > 0 ? (mftValidLength / bytesPerRecord) : 0;
+        int rawRecordCapacity = totalRecordsToRead > 0
+            ? (int)Math.Clamp(totalRecordsToRead, 100_000L, 2_000_000L)
+            : 100_000;
+
+        // Step 2: Stream the entire MFT using large aligned read buffers.
+        // A bounded estimate avoids repeated dictionary rehashing on typical large volumes
+        // without reserving unbounded memory for unusually large or corrupted MFT metadata.
+        var rawRecords = new Dictionary<ulong, MftRawRecord>(rawRecordCapacity);
         long recordsParsed = 0;
         long filesCount = 0;
         long foldersCount = 0;
         long totalBytesScanned = 0;
+        long nextProgressReportMilliseconds = 0;
 
         fixed (byte* bufPtr = readBuffer)
         {
@@ -167,10 +173,6 @@ public class NtfsMftReader
                                     totalBytesScanned += rawRecord.Size;
                                 }
                             }
-                            else
-                            {
-                                extensionRecords.Add(rawRecord);
-                            }
                         }
 
                         recordsParsed++;
@@ -179,7 +181,8 @@ public class NtfsMftReader
                     currentRecordIndex += recordsInBuffer;
                     extentBytesRead += bytesRead;
 
-                    if (sw.ElapsedMilliseconds % 200 < 20)
+                    long elapsedMilliseconds = sw.ElapsedMilliseconds;
+                    if (elapsedMilliseconds >= nextProgressReportMilliseconds)
                     {
                         progress?.Report(new ScanProgress
                         {
@@ -190,6 +193,7 @@ public class NtfsMftReader
                             ElapsedTime = sw.Elapsed,
                             PercentComplete = totalRecordsToRead > 0 ? ((double)recordsParsed / totalRecordsToRead) * 100.0 : null
                         });
+                        nextProgressReportMilliseconds = elapsedMilliseconds + 200;
                     }
                 }
             }
@@ -283,6 +287,10 @@ public class NtfsMftReader
                 found.RootPath = normalizedTargetPath;
                 effectiveRoot = found;
             }
+            else
+            {
+                throw new DirectoryNotFoundException("The requested subtree was not found in the MFT scan.");
+            }
         }
 
         // Step 4: Aggregate sizes, counts, percentages
@@ -295,7 +303,7 @@ public class NtfsMftReader
             ElapsedTime = sw.Elapsed
         });
 
-        PostOrderAggregate(effectiveRoot);
+        effectiveRoot.RecalculateAggregateStatistics();
 
         // Step 5: Sorting
         progress?.Report(new ScanProgress
@@ -516,39 +524,6 @@ public class NtfsMftReader
             return null;
 
         return raw;
-    }
-
-    private static long PostOrderAggregate(FileSystemItem item)
-    {
-        if (!item.IsDirectory)
-        {
-            item.FileCount = 1;
-            item.FolderCount = 0;
-            return item.Size;
-        }
-
-        long totalSize = 0;
-        long totalAllocated = 0;
-        long totalFiles = 0;
-        long totalFolders = 0;
-
-        if (item.HasChildren)
-        {
-            foreach (var child in item.Children)
-            {
-                PostOrderAggregate(child);
-                totalSize += child.Size;
-                totalAllocated += child.AllocatedSize;
-                totalFiles += child.FileCount;
-                totalFolders += child.FolderCount + (child.IsDirectory ? 1 : 0);
-            }
-        }
-
-        item.Size = totalSize;
-        item.AllocatedSize = totalAllocated;
-        item.FileCount = totalFiles;
-        item.FolderCount = totalFolders;
-        return totalSize;
     }
 
     private static void AddVirtualVolumeItems(FileSystemItem root, string driveLetter, NativeMethods.NTFS_VOLUME_DATA_BUFFER volumeData)

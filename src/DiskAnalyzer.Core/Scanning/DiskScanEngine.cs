@@ -17,9 +17,29 @@ namespace DiskAnalyzer.Core.Scanning;
 /// </summary>
 public class DiskScanEngine
 {
-    private readonly NtfsMftReader _mftReader = new();
-    private readonly NtfsUsnReader _usnReader = new();
-    private readonly FastDirectoryScanner _dirScanner = new();
+    private readonly Func<string, ScanOptions, IProgress<ScanProgress>?, CancellationToken, FileSystemItem> _scanMft;
+    private readonly Func<string, ScanOptions, IProgress<ScanProgress>?, CancellationToken, FileSystemItem> _scanUsn;
+    private readonly Func<string, ScanOptions, IProgress<ScanProgress>?, CancellationToken, FileSystemItem> _scanDirectory;
+
+    public DiskScanEngine()
+    {
+        var mftReader = new NtfsMftReader();
+        var usnReader = new NtfsUsnReader();
+        var directoryScanner = new FastDirectoryScanner();
+        _scanMft = (path, options, progress, token) => mftReader.ReadDrive(path, options, progress, token);
+        _scanUsn = (path, options, progress, token) => usnReader.ReadDrive(path, options, progress, token);
+        _scanDirectory = (path, options, progress, token) => directoryScanner.Scan(path, options, progress, token);
+    }
+
+    internal DiskScanEngine(
+        Func<string, ScanOptions, IProgress<ScanProgress>?, CancellationToken, FileSystemItem> scanMft,
+        Func<string, ScanOptions, IProgress<ScanProgress>?, CancellationToken, FileSystemItem> scanUsn,
+        Func<string, ScanOptions, IProgress<ScanProgress>?, CancellationToken, FileSystemItem> scanDirectory)
+    {
+        _scanMft = scanMft ?? throw new ArgumentNullException(nameof(scanMft));
+        _scanUsn = scanUsn ?? throw new ArgumentNullException(nameof(scanUsn));
+        _scanDirectory = scanDirectory ?? throw new ArgumentNullException(nameof(scanDirectory));
+    }
 
     /// <summary>
     /// Executes a scan asynchronously with automatic strategy selection.
@@ -52,6 +72,7 @@ public class DiskScanEngine
         IProgress<ScanProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         string targetPath = options.Path;
         if (string.IsNullOrWhiteSpace(targetPath))
         {
@@ -71,7 +92,7 @@ public class DiskScanEngine
 
         if (effectiveMode == ScanMode.Auto)
         {
-            if (OperatingSystem.IsWindows() && isNtfs && isAdmin)
+            if (OperatingSystem.IsWindows() && isFullDrive && isNtfs && isAdmin)
             {
                 effectiveMode = ScanMode.DirectMft;
             }
@@ -81,41 +102,38 @@ public class DiskScanEngine
             }
         }
 
-        // Try selected mode with fallback chain
+        // USN enumerates a volume, not an arbitrary subtree. Respect folder scope.
+        if (effectiveMode == ScanMode.UsnJournal && !isFullDrive)
+            effectiveMode = ScanMode.FastWalker;
+
+        // Try the selected mode and fall back directly to the directory walker when needed.
         if (effectiveMode == ScanMode.DirectMft)
         {
             try
             {
-                return _mftReader.ReadDrive(targetPath, options, progress, cancellationToken);
+                return _scanMft(targetPath, options, progress, cancellationToken);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception mftException) when (mftException is not OperationCanceledException)
             {
-                // Fallback to USN Journal
-                try
-                {
-                    return _usnReader.ReadDrive(targetPath, options, progress, cancellationToken);
-                }
-                catch
-                {
-                    // Fallback to multi-threaded FastDirectoryScanner
-                    return _dirScanner.Scan(targetPath, options, progress, cancellationToken);
-                }
+                TraceFallback(ScanMode.DirectMft, ScanMode.FastWalker, mftException);
+                return _scanDirectory(targetPath, options, progress, cancellationToken);
             }
         }
         else if (effectiveMode == ScanMode.UsnJournal)
         {
             try
             {
-                return _usnReader.ReadDrive(targetPath, options, progress, cancellationToken);
+                return _scanUsn(targetPath, options, progress, cancellationToken);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception usnException) when (usnException is not OperationCanceledException)
             {
-                return _dirScanner.Scan(targetPath, options, progress, cancellationToken);
+                TraceFallback(ScanMode.UsnJournal, ScanMode.FastWalker, usnException);
+                return _scanDirectory(targetPath, options, progress, cancellationToken);
             }
         }
         else
         {
-            return _dirScanner.Scan(targetPath, options, progress, cancellationToken);
+            return _scanDirectory(targetPath, options, progress, cancellationToken);
         }
     }
 
@@ -235,5 +253,15 @@ public class DiskScanEngine
         {
             return false;
         }
+    }
+
+    private static void TraceFallback(ScanMode failedMode, ScanMode fallbackMode, Exception exception)
+    {
+        Trace.TraceWarning(
+            "DiskAnalyzer scan fallback from {0} to {1}: {2} (0x{3:X8})",
+            failedMode,
+            fallbackMode,
+            exception.GetType().Name,
+            exception.HResult);
     }
 }

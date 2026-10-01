@@ -308,6 +308,43 @@ public class FileSystemItem : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Recalculates size, allocated size, file count, and folder count from this item's descendants.
+    /// Call this only after all child collections have been populated.
+    /// </summary>
+    public long RecalculateAggregateStatistics()
+    {
+        if (!IsDirectory)
+        {
+            FileCount = 1;
+            FolderCount = 0;
+            return Size;
+        }
+
+        long totalSize = 0;
+        long totalAllocated = 0;
+        long totalFiles = 0;
+        long totalFolders = 0;
+
+        if (_children != null)
+        {
+            foreach (var child in _children)
+            {
+                child.RecalculateAggregateStatistics();
+                totalSize += child.Size;
+                totalAllocated += child.AllocatedSize;
+                totalFiles += child.FileCount;
+                totalFolders += child.FolderCount + (child.IsDirectory ? 1 : 0);
+            }
+        }
+
+        Size = totalSize;
+        AllocatedSize = totalAllocated;
+        FileCount = totalFiles;
+        FolderCount = totalFolders;
+        return totalSize;
+    }
+
+    /// <summary>
     /// Fast and human-readable byte size formatter (B, KB, MB, GB, TB, PB).
     /// </summary>
     public static string FormatBytes(long bytes)

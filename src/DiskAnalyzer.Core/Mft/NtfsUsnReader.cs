@@ -1,9 +1,11 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Text;
 using DiskAnalyzer.Core.Models;
 using DiskAnalyzer.Core.Native;
 using Microsoft.Win32.SafeHandles;
@@ -19,10 +21,13 @@ public class NtfsUsnReader
 
     public unsafe FileSystemItem ReadDrive(string drivePath, ScanOptions? options = null, IProgress<ScanProgress>? progress = null, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         options ??= new ScanOptions();
         var sw = Stopwatch.StartNew();
 
         string driveLetter = Path.GetPathRoot(drivePath)?.TrimEnd('\\') ?? "C:";
+        if (!string.Equals(Path.GetFullPath(drivePath).TrimEnd('\\'), driveLetter, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("USN enumeration requires a drive root.", nameof(drivePath));
         string volumePath = $@"\\.\{driveLetter}";
 
         PrivilegeManager.EnableBackupPrivileges();
@@ -75,6 +80,7 @@ public class NtfsUsnReader
         var itemMap = new Dictionary<ulong, FileSystemItem>(100_000);
         long filesCount = 0;
         long foldersCount = 0;
+        long nextProgressReportMilliseconds = 0;
 
         progress?.Report(new ScanProgress
         {
@@ -99,15 +105,18 @@ public class NtfsUsnReader
                     out returnedBytes,
                     IntPtr.Zero);
 
-                if (!success || returnedBytes <= sizeof(ulong))
+                if (!success)
                 {
                     int err = Marshal.GetLastWin32Error();
-                    if (err == NativeMethods.ERROR_HANDLE_EOF || err == NativeMethods.ERROR_SUCCESS || returnedBytes <= sizeof(ulong))
+                    if (err == NativeMethods.ERROR_HANDLE_EOF)
                     {
                         break;
                     }
                     throw new InvalidOperationException($"FSCTL_ENUM_USN_DATA failed. Error code: {err}");
                 }
+                if (returnedBytes <= sizeof(ulong)) break;
+                if (returnedBytes > buffer.Length)
+                    throw new InvalidDataException("USN output exceeds the supplied buffer.");
 
                 // First 8 bytes of output buffer is the next StartFileReferenceNumber
                 ulong nextFrn = *(ulong*)bufPtr;
@@ -116,50 +125,19 @@ public class NtfsUsnReader
                 int offset = sizeof(ulong);
                 while (offset < returnedBytes)
                 {
-                    var record = (NativeMethods.USN_RECORD_V2*)(bufPtr + offset);
-                    if (record->RecordLength == 0)
-                        break;
-
-                    ulong frn = record->FileReferenceNumber & 0x0000FFFFFFFFFFFF;
-                    ulong parentFrn = record->ParentFileReferenceNumber & 0x0000FFFFFFFFFFFF;
-                    bool isDirectory = (record->FileAttributes & NativeMethods.FILE_ATTRIBUTE_DIRECTORY) != 0;
-
-                    if (record->FileNameLength > 0 && offset + record->FileNameOffset + record->FileNameLength <= returnedBytes)
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var item = ParseRecord(buffer.AsSpan(offset, (int)returnedBytes - offset), out int recordLength);
+                    if (item.Name != "." && item.Name != "..")
                     {
-                        char* nameChars = (char*)(bufPtr + offset + record->FileNameOffset);
-                        int charCount = record->FileNameLength / sizeof(char);
-                        string name = new string(nameChars, 0, charCount);
-
-                        if (name != "." && name != "..")
-                        {
-                            var item = new FileSystemItem
-                            {
-                                Name = name,
-                                FileRecordNumber = frn,
-                                ParentRecordNumber = parentFrn,
-                                Attributes = (FileAttributes)record->FileAttributes,
-                                IsDirectory = isDirectory,
-                                Extension = isDirectory ? string.Empty : Path.GetExtension(name)
-                            };
-
-                            if (record->TimeStamp > 0)
-                            {
-                                try { item.LastModified = DateTime.FromFileTimeUtc(record->TimeStamp); } catch { }
-                            }
-
-                            itemMap[frn] = item;
-
-                            if (isDirectory)
-                                foldersCount++;
-                            else
-                                filesCount++;
-                        }
+                        itemMap[item.FileRecordNumber] = item;
+                        if (item.IsDirectory) foldersCount++;
+                        else filesCount++;
                     }
-
-                    offset += (int)record->RecordLength;
+                    offset += recordLength;
                 }
 
-                if (sw.ElapsedMilliseconds % 200 < 20)
+                long elapsedMilliseconds = sw.ElapsedMilliseconds;
+                if (elapsedMilliseconds >= nextProgressReportMilliseconds)
                 {
                     progress?.Report(new ScanProgress
                     {
@@ -168,6 +146,7 @@ public class NtfsUsnReader
                         FoldersScanned = foldersCount,
                         ElapsedTime = sw.Elapsed
                     });
+                    nextProgressReportMilliseconds = elapsedMilliseconds + 200;
                 }
             }
         }
@@ -202,6 +181,7 @@ public class NtfsUsnReader
 
         foreach (var kvp in itemMap)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var item = kvp.Value;
             if (item.FileRecordNumber == MFT_RECORD_ROOT)
                 continue;
@@ -226,7 +206,18 @@ public class NtfsUsnReader
             ElapsedTime = sw.Elapsed
         });
 
-        PostOrderAggregate(rootItem);
+        // USN records contain names and attributes, but no file sizes. Resolve metadata
+        // before aggregation; failures propagate to the directory-walker fallback.
+        foreach (var item in itemMap.Values)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (item.IsDirectory) continue;
+            var info = new FileInfo(item.GetFullPath());
+            item.Size = info.Length;
+            item.AllocatedSize = (item.Size + 4095) & ~4095L; // Same estimate as FastWalker.
+        }
+
+        rootItem.RecalculateAggregateStatistics();
 
         progress?.Report(new ScanProgress
         {
@@ -251,36 +242,42 @@ public class NtfsUsnReader
         return rootItem;
     }
 
-    private static long PostOrderAggregate(FileSystemItem item)
+    internal static FileSystemItem ParseRecord(ReadOnlySpan<byte> data, out int recordLength)
     {
-        if (!item.IsDirectory)
+        const int headerLength = 60;
+        if (data.Length < headerLength)
+            throw new InvalidDataException("Truncated USN record header.");
+        uint length = BinaryPrimitives.ReadUInt32LittleEndian(data);
+        if (length < headerLength || length > data.Length)
+            throw new InvalidDataException("Invalid USN record length.");
+        if (BinaryPrimitives.ReadUInt16LittleEndian(data[4..]) != 2)
+            throw new NotSupportedException("Only USN V2 records are supported.");
+        int nameLength = BinaryPrimitives.ReadUInt16LittleEndian(data[56..]);
+        int nameOffset = BinaryPrimitives.ReadUInt16LittleEndian(data[58..]);
+        if (nameLength == 0 || (nameLength & 1) != 0 || nameOffset < headerLength
+            || (nameOffset & 1) != 0 || nameOffset + nameLength > length)
+            throw new InvalidDataException("Invalid USN filename bounds.");
+
+        recordLength = (int)length;
+        string name = Encoding.Unicode.GetString(data.Slice(nameOffset, nameLength));
+        var attributes = (FileAttributes)BinaryPrimitives.ReadUInt32LittleEndian(data[52..]);
+        bool isDirectory = (attributes & FileAttributes.Directory) != 0;
+        var item = new FileSystemItem
         {
-            item.FileCount = 1;
-            item.FolderCount = 0;
-            return item.Size;
-        }
-
-        long totalSize = 0;
-        long totalAllocated = 0;
-        long totalFiles = 0;
-        long totalFolders = 0;
-
-        if (item.HasChildren)
+            Name = name,
+            FileRecordNumber = BinaryPrimitives.ReadUInt64LittleEndian(data[8..]) & 0x0000FFFFFFFFFFFF,
+            ParentRecordNumber = BinaryPrimitives.ReadUInt64LittleEndian(data[16..]) & 0x0000FFFFFFFFFFFF,
+            Attributes = attributes,
+            IsDirectory = isDirectory,
+            Extension = isDirectory ? string.Empty : Path.GetExtension(name)
+        };
+        long timestamp = BinaryPrimitives.ReadInt64LittleEndian(data[32..]);
+        if (timestamp > 0)
         {
-            foreach (var child in item.Children)
-            {
-                PostOrderAggregate(child);
-                totalSize += child.Size;
-                totalAllocated += child.AllocatedSize;
-                totalFiles += child.FileCount;
-                totalFolders += child.FolderCount + (child.IsDirectory ? 1 : 0);
-            }
+            try { item.LastModified = DateTime.FromFileTimeUtc(timestamp); }
+            catch (ArgumentOutOfRangeException) { }
         }
-
-        item.Size = totalSize;
-        item.AllocatedSize = totalAllocated;
-        item.FileCount = totalFiles;
-        item.FolderCount = totalFolders;
-        return totalSize;
+        return item;
     }
+
 }

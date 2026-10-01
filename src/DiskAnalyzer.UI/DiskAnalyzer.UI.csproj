@@ -22,19 +22,23 @@
     <Company>Alex Lin</Company>
     <Authors>Alex Lin</Authors>
     <Copyright>Copyright © 2026 Alex Lin</Copyright>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
-    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.2.0</AssemblyVersion>
+    <FileVersion>1.0.2.0</FileVersion>
+    <Version>1.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)**\*.cs" Exclude="$(MSBuildThisFileDirectory)obj\**;$(MSBuildThisFileDirectory)bin\**" />
+    <Compile Include="$(MSBuildThisFileDirectory)**\*.cs" Exclude="$(MSBuildThisFileDirectory)obj\**;$(MSBuildThisFileDirectory)bin\**;$(MSBuildThisFileDirectory)Core\**" />
     <EmbeddedResource Include="Resources\Strings*.resx" />
     <Page Include="MainWindow.xaml" />
     <Page Include="Themes\DarkTheme.xaml" />
     <Resource Include="app.ico" />
     <None Include="$(MSBuildThisFileDirectory)..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
     <None Include="$(MSBuildThisFileDirectory)..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DiskAnalyzer.Core\DiskAnalyzer.Core.csproj" />
   </ItemGroup>
 
 </Project>

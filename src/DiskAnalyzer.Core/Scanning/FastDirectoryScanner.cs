@@ -21,6 +21,7 @@ public class FastDirectoryScanner
 
     public FileSystemItem Scan(string rootPath, ScanOptions? options = null, IProgress<ScanProgress>? progress = null, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         options ??= new ScanOptions();
         var sw = Stopwatch.StartNew();
 
@@ -60,9 +61,15 @@ public class FastDirectoryScanner
         var workQueue = new ConcurrentQueue<(FileSystemItem ParentItem, string FullPath, int Depth)>();
         workQueue.Enqueue((rootItem, normalizedPath, 0));
 
-        int activeWorkers = 0;
-        using var workSignal = new ManualResetEventSlim(true);
-        using var finishedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        // Count queued and in-progress folders together. A worker must register discovered
+        // folders before it completes its own item, so the count cannot momentarily reach
+        // zero while another worker is about to scan a subtree.
+        long pendingWorkItems = 1;
+        Action<FileSystemItem, string, int> enqueueWork = (parentItem, fullPath, depth) =>
+        {
+            Interlocked.Increment(ref pendingWorkItems);
+            workQueue.Enqueue((parentItem, fullPath, depth));
+        };
 
         var workerTasks = new Task[maxWorkers];
 
@@ -70,18 +77,17 @@ public class FastDirectoryScanner
         {
             workerTasks[i] = Task.Run(() =>
             {
-                while (!finishedCts.IsCancellationRequested)
+                while (!cancellationToken.IsCancellationRequested)
                 {
                     if (workQueue.TryDequeue(out var work))
                     {
-                        Interlocked.Increment(ref activeWorkers);
                         try
                         {
                             ScanDirectory(
                                 work.ParentItem,
                                 work.FullPath,
                                 work.Depth,
-                                workQueue,
+                                enqueueWork,
                                 options,
                                 ref filesScanned,
                                 ref foldersScanned,
@@ -98,31 +104,28 @@ public class FastDirectoryScanner
                         }
                         finally
                         {
-                            int remaining = Interlocked.Decrement(ref activeWorkers);
-                            if (workQueue.IsEmpty && remaining == 0)
-                            {
-                                finishedCts.Cancel(); // Signal all workers to stop
-                            }
+                            Interlocked.Decrement(ref pendingWorkItems);
                         }
                     }
                     else
                     {
-                        if (activeWorkers == 0 && workQueue.IsEmpty)
+                        if (Volatile.Read(ref pendingWorkItems) == 0)
                         {
-                            finishedCts.Cancel();
                             break;
                         }
                         // Short wait before checking queue again
-                        Thread.SpinWait(100);
+                        Thread.Sleep(1);
                     }
                 }
-            }, cancellationToken);
+            });
         }
 
         // Progress reporting loop
-        while (!finishedCts.IsCancellationRequested)
+        long nextProgressReportMilliseconds = 0;
+        while (!cancellationToken.IsCancellationRequested && Volatile.Read(ref pendingWorkItems) > 0)
         {
-            if (sw.ElapsedMilliseconds % 150 < 25)
+            long elapsedMilliseconds = sw.ElapsedMilliseconds;
+            if (elapsedMilliseconds >= nextProgressReportMilliseconds)
             {
                 progress?.Report(new ScanProgress
                 {
@@ -133,15 +136,12 @@ public class FastDirectoryScanner
                     ElapsedTime = sw.Elapsed,
                     CurrentFolder = normalizedPath
                 });
+                nextProgressReportMilliseconds = elapsedMilliseconds + 150;
             }
             Thread.Sleep(50);
         }
 
-        try
-        {
-            Task.WaitAll(workerTasks, TimeSpan.FromSeconds(5));
-        }
-        catch { }
+        Task.WaitAll(workerTasks);
 
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -155,7 +155,8 @@ public class FastDirectoryScanner
             ElapsedTime = sw.Elapsed
         });
 
-        PostOrderAggregate(rootItem);
+        rootItem.RecalculateAggregateStatistics();
+        cancellationToken.ThrowIfCancellationRequested();
 
         // Step 3: Sort children and compute percentages
         progress?.Report(new ScanProgress
@@ -169,6 +170,7 @@ public class FastDirectoryScanner
 
         rootItem.CalculateChildPercentages(true);
         rootItem.SortChildrenBySizeDescending(true);
+        cancellationToken.ThrowIfCancellationRequested();
 
         progress?.Report(new ScanProgress
         {
@@ -186,7 +188,7 @@ public class FastDirectoryScanner
         FileSystemItem parentItem,
         string dirPath,
         int currentDepth,
-        ConcurrentQueue<(FileSystemItem ParentItem, string FullPath, int Depth)> queue,
+        Action<FileSystemItem, string, int> enqueueWork,
         ScanOptions options,
         ref long filesScanned,
         ref long foldersScanned,
@@ -211,8 +213,6 @@ public class FastDirectoryScanner
 
         if (hFind == IntPtr.Zero || hFind == (IntPtr)(-1))
             return;
-
-        var localChildren = new List<FileSystemItem>();
 
         try
         {
@@ -249,7 +249,9 @@ public class FastDirectoryScanner
                     Extension = isDir ? string.Empty : Path.GetExtension(fileName)
                 };
 
-                localChildren.Add(item);
+                // Link before publishing work. Parent assignment invalidates descendant path
+                // caches and must not race another worker populating this item's children.
+                parentItem.AddChild(item);
 
                 if (isDir)
                 {
@@ -257,7 +259,7 @@ public class FastDirectoryScanner
                     if (!isReparse || options.FollowReparsePoints)
                     {
                         string childFullPath = Path.Combine(dirPath, fileName);
-                        queue.Enqueue((item, childFullPath, currentDepth + 1));
+                        enqueueWork(item, childFullPath, currentDepth + 1);
                     }
                 }
                 else
@@ -273,10 +275,6 @@ public class FastDirectoryScanner
             NativeMethods.FindClose(hFind);
         }
 
-        lock (parentItem)
-        {
-            parentItem.AddChildren(localChildren);
-        }
     }
 
     private static string MakeExtendedPath(string path)
@@ -287,36 +285,4 @@ public class FastDirectoryScanner
         return @"\\?\" + path;
     }
 
-    private static long PostOrderAggregate(FileSystemItem item)
-    {
-        if (!item.IsDirectory)
-        {
-            item.FileCount = 1;
-            item.FolderCount = 0;
-            return item.Size;
-        }
-
-        long totalSize = 0;
-        long totalAllocated = 0;
-        long totalFiles = 0;
-        long totalFolders = 0;
-
-        if (item.HasChildren)
-        {
-            foreach (var child in item.Children)
-            {
-                PostOrderAggregate(child);
-                totalSize += child.Size;
-                totalAllocated += child.AllocatedSize;
-                totalFiles += child.FileCount;
-                totalFolders += child.FolderCount + (child.IsDirectory ? 1 : 0);
-            }
-        }
-
-        item.Size = totalSize;
-        item.AllocatedSize = totalAllocated;
-        item.FileCount = totalFiles;
-        item.FolderCount = totalFolders;
-        return totalSize;
-    }
 }

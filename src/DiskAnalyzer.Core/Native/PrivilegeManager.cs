@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.Versioning;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
 
 namespace DiskAnalyzer.Core.Native;
@@ -52,7 +53,7 @@ public static class PrivilegeManager
     /// </summary>
     public static bool EnablePrivilege(string privilegeName)
     {
-        if (!OperatingSystem.IsWindows())
+        if (!OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(privilegeName))
             return false;
 
         IntPtr tokenHandle = IntPtr.Zero;
@@ -79,7 +80,8 @@ public static class PrivilegeManager
                 }
             };
 
-            return NativeMethods.AdjustTokenPrivileges(tokenHandle, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
+            return NativeMethods.AdjustTokenPrivileges(tokenHandle, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero)
+                && Marshal.GetLastWin32Error() == NativeMethods.ERROR_SUCCESS;
         }
         catch
         {

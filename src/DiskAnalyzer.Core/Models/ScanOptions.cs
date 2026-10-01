@@ -8,7 +8,7 @@ namespace DiskAnalyzer.Core.Models;
 public enum ScanMode
 {
     /// <summary>
-    /// Automatically selects the fastest available mode (DirectMft -> UsnJournal -> FastWalker).
+    /// Automatically selects DirectMft when available, then falls back to FastWalker.
     /// </summary>
     Auto,
 
@@ -18,7 +18,8 @@ public enum ScanMode
     DirectMft,
 
     /// <summary>
-    /// USN Change Journal enumeration (fast, requires NTFS & Administrator).
+    /// Explicit optional experimental USN Change Journal enumeration. Per-file metadata resolution
+    /// adds overhead; this mode is never used as an automatic fast fallback.
     /// </summary>
     UsnJournal,
 
